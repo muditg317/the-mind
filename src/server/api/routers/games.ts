@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { games } from "~/server/db/schema";
+import { pusherServerClient } from "~/server/pusher";
 
 const UNKOWN_HOST_IP = "UNKOWN_HOST_IP";
 
@@ -57,6 +58,15 @@ export const gamesRouter = createTRPCRouter({
         .set(game)
         .where(eq(games.room_name, game.room_name))
         .execute()
+
+      for (let player of game.player_list) {
+        if (player === input.playerName) continue;
+        await pusherServerClient.trigger(
+          `room-${game.room_name}-user-${player}`,
+          'new-player',
+          {name: input.playerName}
+        );
+      }
       
       console.log(`${input.playerName} joined ${game.room_name} room`)
       return {

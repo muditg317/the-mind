@@ -1,41 +1,20 @@
-"use client"
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-import { api } from "~/trpc/react";
+import { api } from "~/trpc/server";
 
+import { GameView } from "~/app/_components/game-view"
+import { redirect } from "next/navigation";
 
-export default function Page({ params }: {params:{room:string}}) {
-  const router = useRouter();
-  const leaveGame = api.games.leaveGame.useMutation({
-    onSuccess: () => {
-      router.push("");
-    }
-  });
-
-  const playerName = localStorage.getItem("playerName") ?? "";
-  // console.log(`loaded player name ${playerName}`);
-
+export default async function Page({ params }: {params:{room:string}}) {
   const room = params.room;
-
-  useEffect(() => {
-    const exitingFunction = () => {
-      leaveGame.mutate({
-        roomName: room,
-        playerName
-      })
-    };
-
-    return () => {
-      exitingFunction();
-    };
-  }, [playerName, leaveGame, room]);
-
-  if (!playerName) {
-    router.replace("");
-    return
+  let players: string[];
+  try {
+    players = await api.games.players.query({
+      roomName: room
+    });
+    console.log("game has the following players", players);
+  } catch (_) {
+    console.log("failed to fetch players");
+    redirect("/");
   }
 
-  return <>
-    Yay you&apos;re in the {room} and your name is {playerName}
-  </>
+  return <GameView room={room} initialPlayers={players} />;
 }

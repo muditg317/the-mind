@@ -103,4 +103,24 @@ export const gamesRouter = createTRPCRouter({
       
       return true;
     }),
+  
+  players: publicProcedure
+    .input(z.object({ roomName: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const game = await ctx.db.query.games.findFirst({
+        where: ({ room_name }, { eq, and }) => and(
+          eq(room_name, input.roomName),
+          // eq(host_ip, remote_addr)
+        ),
+        columns: {
+          id: true,
+          room_name: true,
+          player_list: true
+        }
+      }).execute();
+
+      if (!game) throw new Error("No game with this name!");
+
+      return game.player_list;
+    })
 });

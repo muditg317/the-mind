@@ -12,7 +12,7 @@ export default function Page({ params }: {params:{room:string}}) {
     }
   });
 
-  const playerName = localStorage.getItem("playerName") || "";
+  const playerName = localStorage.getItem("playerName") ?? "";
   // console.log(`loaded player name ${playerName}`);
 
   const room = params.room;
@@ -36,6 +36,6 @@ export default function Page({ params }: {params:{room:string}}) {
   }
 
   return <>
-    YAy you're in the {room} and your name is {playerName}
+    Yay you&apos;re in the {room} and your name is {playerName}
   </>
 }

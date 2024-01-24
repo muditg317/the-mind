@@ -1,6 +1,6 @@
-import { api } from "~/trpc/server";
+import { api } from "@_trpc/server";
 
-import { GameView } from "~/app/_components/game-view"
+import { GameView } from "@components/game-view"
 import { redirect } from "next/navigation";
 
 export default async function Page({ params }: {params:{room:string}}) {
@@ -10,9 +10,9 @@ export default async function Page({ params }: {params:{room:string}}) {
     players = await api.games.players.query({
       roomName: room
     });
-    console.log("game has the following players", players);
+    // console.log("game has the following players", players);
   } catch (_) {
-    console.log("failed to fetch players");
+    // console.log("failed to fetch players");
     redirect("/");
   }
 

@@ -12,6 +12,7 @@
     /* Strictness */
     "strict": true,
     "noUncheckedIndexedAccess": true,
+    "strictNullChecks": true,
     "checkJs": true,
 
     /* Bundled projects */
@@ -26,7 +27,14 @@
     /* Path Aliases */
     "baseUrl": ".",
     "paths": {
-      "~/*": ["./src/*"]
+      // "~/*": ["./src/*"],
+      "@env": ["./src/env"],
+      "@components/*": ["./src/app/_components/*"],
+      "@lib/*": ["./src/lib/*"],
+      "@context/*": ["./src/context/*"],
+      "@server/*": ["./src/server/*"],
+      "@_trpc/*": ["./src/trpc/*"],
+      "@styles/*": ["./src/styles/*"]
     }
   },
   "include": [

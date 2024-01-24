@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 
-import { api } from "~/trpc/react";
+import { api } from "@_trpc/react";
 
 // import {
 //   AlertDialog,
@@ -15,8 +15,8 @@ import { api } from "~/trpc/react";
 //   AlertDialogHeader,
 //   AlertDialogTitle,
 //   AlertDialogTrigger,
-// } from "~/app/_components/ui/alert-dialog"
-// import { Button } from "~/app/_components/ui/button"
+// } from "@components/ui/alert-dialog"
+// import { Button } from "@components/ui/button"
 
 interface JoinGameProps {
   existingRooms: string[];
@@ -30,6 +30,10 @@ export function JoinGame({ existingRooms }: JoinGameProps) {
       router.push(`game/${roomName}`);
     }
   });
+
+  // useEffect(() => {
+  //   !playerName && setPlayerName(localStorage)
+  // }, [])
 
   return (<>
     <h2 className="text-2xl mb-6">Join a game! (tap any room to join)</h2>

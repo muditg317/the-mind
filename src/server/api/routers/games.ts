@@ -1,9 +1,10 @@
 import { eq } from "drizzle-orm/sql/expressions/conditions";
 import { z } from "zod";
 
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-import { games } from "~/server/db/schema";
-import { pusherServerClient } from "~/server/pusher";
+import { TRPCError } from "@trpc/server"
+import { createTRPCRouter, publicProcedure } from "@server/api/trpc";
+import { games } from "@server/db/schema";
+import { pusherServerClient } from "@server/pusher";
 
 const UNKOWN_HOST_IP = "UNKOWN_HOST_IP";
 
@@ -17,7 +18,7 @@ export const gamesRouter = createTRPCRouter({
         room_name: input.roomName,
         host_ip: remote_addr,
         host_name: input.hostName,
-        player_list: [input.hostName]
+        player_list: {[input.hostName]: ""}
       });
       console.log(`created ${input.roomName} room`)
     }),
@@ -48,26 +49,42 @@ export const gamesRouter = createTRPCRouter({
         }
       }).execute();
 
-      if (!game) throw new Error("No game with this name!");
+      if (!game) throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: `There is no active room: ${input.roomName}`,
+      });
+      if (!!game.player_list[input.playerName]) throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: `Player ${input.playerName} is already in the room!`
+      })
 
-      if (game.player_list.includes(input.playerName)) throw new Error(`Player ${input.playerName} already in room!`);
-
-      game.player_list.push(input.playerName);
+      console.log(`Registering ${input.playerName} in ${game.room_name}`);
+      game.player_list[input.playerName] = "";
 
       await ctx.db.update(games)
         .set(game)
         .where(eq(games.room_name, game.room_name))
         .execute()
+      console.log(`Updated db for ${input.playerName} => ${game.room_name}`);
 
-      for (let player of game.player_list) {
+      for (let player in game.player_list) {
         if (player === input.playerName) continue;
-        await pusherServerClient.trigger(
-          `room-${game.room_name}-user-${player}`,
-          'new-player',
-          {name: input.playerName}
-        );
+        console.log(`send update{${input.playerName} => ${game.room_name}} to ${player}`);
+        try {
+          await pusherServerClient.trigger(
+            `room-${game.room_name}`,
+            'new-player',
+            {name: input.playerName}
+          );
+        } catch (e) {
+          console.log(`Failed to send update to ${player}`)
+          console.error(e);
+          // throw new TRPCError({
+
+          // })
+        }
       }
-      
+
       console.log(`${input.playerName} joined ${game.room_name} room`)
       return {
         roomName: game.room_name,
@@ -92,11 +109,16 @@ export const gamesRouter = createTRPCRouter({
         }
       }).execute();
 
-      if (!game) throw new Error("No game with this name!");
+      if (!game) throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: `There is no active room: ${input.roomName}`,
+      });
+      if (!game.player_list[input.playerName]) throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: `Player ${input.playerName} is not in the room!`
+      })
 
-      if (!game.player_list.includes(input.playerName)) throw new Error(`Player ${input.playerName} not in room!`);
-
-      game.player_list = game.player_list.filter(playerName => playerName != input.playerName);
+      game.player_list[input.playerName] = "";
 
       console.log(`${input.playerName} left ${game.room_name} room`)
       if (game.player_list.length) {
@@ -129,8 +151,11 @@ export const gamesRouter = createTRPCRouter({
         }
       }).execute();
 
-      if (!game) throw new Error("No game with this name!");
+      if (!game) throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: `There is no active room: ${input.roomName}`,
+      });
 
-      return game.player_list;
+      return Object.keys(game.player_list);
     })
 });

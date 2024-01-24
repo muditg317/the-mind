@@ -1,8 +1,8 @@
-import type { NextApiRequest, NextApiResponse } from 'next'
-import { NextRequest, NextResponse } from 'next/server'
-import { z } from 'zod'
+import type { NextApiRequest, NextApiResponse } from "next"
+import { NextRequest, NextResponse } from "next/server"
+import { z } from "zod"
 
-import { pusherServerClient } from '~/server/pusher'
+import { pusherServerClient } from "@server/pusher"
 
 export async function POST(req: NextRequest) {
   const query_params = Object.fromEntries(new URLSearchParams(await req.text()).entries())

@@ -2,9 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { api } from "~/trpc/react";
+import { api } from "@_trpc/react";
 
-import { PusherProvider, useSubscribeToEvent } from '~/lib/pusher'
+import { PusherProvider, useSubscribeToEvent } from "@lib/pusher"
 
 
 function GameView_Inner({ room, initialPlayers, playerName }: { room: string, initialPlayers: string[], playerName: string }) {
@@ -23,7 +23,7 @@ function GameView_Inner({ room, initialPlayers, playerName }: { room: string, in
   }, [leaveGameMutation, room, playerName, router]);
 
   useEffect(() => {
-    if (!playerName || !playerList.includes(playerName)) {
+    if (!playerName) {
       exitGame();
     }
 
@@ -42,7 +42,9 @@ function GameView_Inner({ room, initialPlayers, playerName }: { room: string, in
   });
 
   return <>
-    Yay you're in the {room} and your name is {playerName}. current players: |{playerList}|
+   ROOM: {room}<br/>
+   NAME: {playerName}<br/>
+   PLAYERS: |{playerList}|
   </>
 }
 
@@ -51,7 +53,7 @@ export function GameView({ room, initialPlayers }: { room: string, initialPlayer
   // console.log(`loaded playername ${playerName}`);
 
   return (
-  <PusherProvider slug={`room-${room}-player-${playerName}`}>
+  <PusherProvider channel_slug={`room-${room}`}>
     <GameView_Inner room={room} initialPlayers={initialPlayers} playerName={playerName} />
   </PusherProvider>
   );

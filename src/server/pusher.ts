@@ -1,5 +1,5 @@
-import PusherServer from 'pusher'
-import { env } from '~/env'
+import PusherServer from "pusher"
+import { env } from "@env"
 
 export const pusherServerClient = new PusherServer({
   appId: env.PUSHER_APP_ID,

@@ -1,7 +1,7 @@
-import { type NextApiRequest, type NextApiResponse } from 'next'
-import { z } from 'zod'
+import { type NextApiRequest, type NextApiResponse } from "next"
+import { z } from "zod"
 
-import { pusherServerClient } from '~/server/pusher'
+import { pusherServerClient } from "@server/pusher"
 
 
 export async function POST(req: NextApiRequest, res: NextApiResponse) {

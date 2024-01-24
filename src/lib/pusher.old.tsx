@@ -7,7 +7,8 @@ import { useStoreWithEqualityFn } from "zustand/traditional"
 import { env } from "@env"
 
 interface PusherProps {
-  channel_slug: string
+  channel_slug: string,
+  player_name: string;
 }
 
 interface PusherState {
@@ -17,34 +18,38 @@ interface PusherState {
   members: Map<string, unknown>
 }
 
-const createPusherStore = ({ channel_slug }: PusherProps) => {
-  let pusherClient: Pusher
+function getConnectedPusherInstance({ channel_slug, player_name }: PusherProps) {
   if (Pusher.instances.length) {
-    pusherClient = Pusher.instances[0] as Pusher
-    pusherClient.connect()
-  } else {
-    // const randomUserId = channel_slug;
-    const randomUserId = `random-user-id:${Math.random().toFixed(6)}`
-    pusherClient = new Pusher(env.NEXT_PUBLIC_PUSHER_KEY, {
-      cluster: env.NEXT_PUBLIC_PUSHER_CLUSTER,
-      authEndpoint: '/api/pusher/auth-channel',
-      auth: {
-        headers: { user_id: randomUserId },
-      },
-    })
-    // pusherClient = new Pusher(pusher_key, {
-    //   wsHost: pusher_server_host,
-    //   wsPort: pusher_server_port,
-    //   enabledTransports: pusher_server_tls ? ['ws', 'wss'] : ['ws'],
-    //   forceTLS: pusher_server_tls,
-    //   cluster: pusher_server_cluster,
-    //   disableStats: true,
-    //   authEndpoint: '/api/pusher/auth-channel',
-    //   auth: {
-    //     headers: { user_id: randomUserId },
-    //   },
-    // })
+    const client = Pusher.instances[0]!;
+    client.connect();
+    return client;
   }
+  // const randomUserId = `random-user-id:${Math.random().toFixed(6)}`
+  const pusher_user_id = `${channel_slug}-${player_name}`
+  return new Pusher(env.NEXT_PUBLIC_PUSHER_KEY, {
+    cluster: env.NEXT_PUBLIC_PUSHER_CLUSTER,
+    authEndpoint: '/api/pusher/auth-channel',
+    auth: {
+      headers: { pusher_user_id },
+    },
+  })
+  // return new Pusher(pusher_key, {
+  //   wsHost: pusher_server_host,
+  //   wsPort: pusher_server_port,
+  //   enabledTransports: pusher_server_tls ? ['ws', 'wss'] : ['ws'],
+  //   forceTLS: pusher_server_tls,
+  //   cluster: pusher_server_cluster,
+  //   disableStats: true,
+  //   authEndpoint: '/api/pusher/auth-channel',
+  //   auth: {
+  //     headers: { player_name: randomUserId },
+  //   },
+  // })
+}
+
+const createPusherStore = (pusher_props: PusherProps) => {
+  const pusherClient = getConnectedPusherInstance(pusher_props);
+  const { channel_slug } = pusher_props;
 
   const channel = pusherClient.subscribe(channel_slug)
 
@@ -62,17 +67,17 @@ const createPusherStore = ({ channel_slug }: PusherProps) => {
   })
 
   // Update helper that sets 'members' to contents of presence channel's current members
-  const updateMembers = () => {
+  const updateMembers = (members: PresenceChannel["members"]) => {
     store.setState(() => ({
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      members: new Map(Object.entries(presenceChannel.members.members)),
+      members: new Map(Object.entries(members.members)),
     }))
   }
 
   // Bind all "present users changed" events to trigger updateMembers
   presenceChannel.bind('pusher:subscription_succeeded', updateMembers)
-  presenceChannel.bind('pusher:member_added', updateMembers)
-  presenceChannel.bind('pusher:member_removed', updateMembers)
+  // presenceChannel.bind('pusher:member_added', updateMembers)
+  // presenceChannel.bind('pusher:member_removed', updateMembers)
 
   return store
 }

@@ -1,11 +1,14 @@
 import { api } from "@_trpc/server";
 
-import { GameView } from "@components/game-view"
+import dynamic from 'next/dynamic'
+// import { GameView } from "@components/game-view"
 import { redirect } from "next/navigation";
+
+const GameViewNoSSR = dynamic(() => import('@components/game-view'), { ssr: false })
 
 export default async function Page({ params }: {params:{room:string}}) {
   const room = params.room;
-  let players: string[];
+  let players: Record<string, string>;
   try {
     players = await api.games.players.query({
       roomName: room
@@ -16,5 +19,5 @@ export default async function Page({ params }: {params:{room:string}}) {
     redirect("/");
   }
 
-  return <GameView room={room} initialPlayers={players} />;
+  return <GameViewNoSSR room={room} initialPlayers={players} />;
 }

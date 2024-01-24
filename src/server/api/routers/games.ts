@@ -1,12 +1,45 @@
 import { eq } from "drizzle-orm/sql/expressions/conditions";
 import { z } from "zod";
 
-import { TRPCError } from "@trpc/server"
-import { createTRPCRouter, publicProcedure } from "@server/api/trpc";
+import { TRPCError, experimental_standaloneMiddleware } from "@trpc/server"
+import { createTRPCRouter, createTRPCMiddleware, publicProcedure } from "@server/api/trpc";
 import { games } from "@server/db/schema";
 import { pusherServerClient } from "@server/pusher";
+// import { PlanetScaleDatabase } from "drizzle-orm/planetscale-serverless"
+import { type TheMindDatabase } from "@server/db"
 
 const UNKOWN_HOST_IP = "UNKOWN_HOST_IP";
+
+type NotUndef<T> = T extends undefined ? never : T;
+type GamesColumnQuery = Partial<Record<keyof NotUndef<TheMindDatabase["_"]["schema"]>["games"]["columns"], boolean>>
+
+function getGameMiddleware<Cols extends GamesColumnQuery>(columns: Cols) {
+  return experimental_standaloneMiddleware<{
+    ctx: { db: TheMindDatabase }
+    input: { roomName: string }
+  }>().create(async ({ ctx: { db }, input: { roomName }, next }) => {
+    // const remote_addr = ctx.headers.get('x-forwarded-for') ?? UNKOWN_HOST_IP;
+
+    const game = await db.query.games.findFirst({
+      where: ({ room_name }, { eq, and }) => and(
+        eq(room_name, roomName),
+        // eq(host_ip, remote_addr)
+      ),
+      columns: columns
+    }).execute();
+
+    if (!game) throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: `There is no active room: ${roomName}`,
+    });
+
+    return next({
+      ctx: {
+        game
+      }
+    });
+  })
+}
 
 export const gamesRouter = createTRPCRouter({
   create: publicProcedure
@@ -34,128 +67,112 @@ export const gamesRouter = createTRPCRouter({
 
   attemptJoin: publicProcedure
     .input(z.object({ roomName: z.string().min(3), playerName: z.string().min(3) }))
-    .mutation(async ({ ctx, input }) => {
-      // const remote_addr = ctx.headers.get('x-forwarded-for') ?? UNKOWN_HOST_IP;
+    .use(getGameMiddleware({
+      id: true,
+      room_name: true,
+      player_list: true
+    }))
+    .mutation(async ({ ctx: { game, db }, input: { playerName } }) => {
 
-      const game = await ctx.db.query.games.findFirst({
-        where: ({ room_name }, { eq, and }) => and(
-          eq(room_name, input.roomName),
-          // eq(host_ip, remote_addr)
-        ),
-        columns: {
-          id: true,
-          room_name: true,
-          player_list: true
-        }
-      }).execute();
-
-      if (!game) throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: `There is no active room: ${input.roomName}`,
-      });
-      if (!!game.player_list[input.playerName]) throw new TRPCError({
+      if (!!game.player_list[playerName]) throw new TRPCError({
         code: "UNAUTHORIZED",
-        message: `Player ${input.playerName} is already in the room!`
+        message: `Player ${playerName} is already in the room!`
       })
 
-      console.log(`Registering ${input.playerName} in ${game.room_name}`);
-      game.player_list[input.playerName] = "";
+      console.log(`Registering ${playerName} in ${game.room_name}`);
+      game.player_list[playerName] = "";
 
-      await ctx.db.update(games)
+      await db.update(games)
         .set(game)
         .where(eq(games.room_name, game.room_name))
         .execute()
-      console.log(`Updated db for ${input.playerName} => ${game.room_name}`);
+      console.log(`Updated db for ${playerName} => ${game.room_name}`);
 
-      for (let player in game.player_list) {
-        if (player === input.playerName) continue;
-        console.log(`send update{${input.playerName} => ${game.room_name}} to ${player}`);
-        try {
-          await pusherServerClient.trigger(
-            `room-${game.room_name}`,
-            'new-player',
-            {name: input.playerName}
-          );
-        } catch (e) {
-          console.log(`Failed to send update to ${player}`)
-          console.error(e);
-          // throw new TRPCError({
-
-          // })
-        }
-      }
-
-      console.log(`${input.playerName} joined ${game.room_name} room`)
+      console.log(`${playerName} joined ${game.room_name} room`)
       return {
         roomName: game.room_name,
-        playerName: input.playerName
+        playerName: playerName
       };
     }),
 
   leaveGame: publicProcedure
     .input(z.object({ roomName: z.string().min(3), playerName: z.string().min(3) }))
-    .mutation(async ({ ctx, input }) => {
+    .use(getGameMiddleware({
+      id: true,
+      room_name: true,
+      player_list: true
+    }))
+    .mutation(async ({ ctx: { game, db }, input: { roomName, playerName } }) => {
       // const remote_addr = ctx.headers.get('x-forwarded-for') ?? UNKOWN_HOST_IP;
-
-      const game = await ctx.db.query.games.findFirst({
-        where: ({ room_name }, { eq, and }) => and(
-          eq(room_name, input.roomName),
-          // eq(host_ip, remote_addr)
-        ),
-        columns: {
-          id: true,
-          room_name: true,
-          player_list: true
-        }
-      }).execute();
 
       if (!game) throw new TRPCError({
         code: "BAD_REQUEST",
-        message: `There is no active room: ${input.roomName}`,
+        message: `There is no active room: ${roomName}`,
       });
-      if (!game.player_list[input.playerName]) throw new TRPCError({
+      if (!game.player_list[playerName]) throw new TRPCError({
         code: "UNAUTHORIZED",
-        message: `Player ${input.playerName} is not in the room!`
+        message: `Player ${playerName} is not in the room!`
       })
 
-      game.player_list[input.playerName] = "";
+      game.player_list[playerName] = "";
 
-      console.log(`${input.playerName} left ${game.room_name} room`)
+      console.log(`${playerName} left ${game.room_name} room`)
       if (game.player_list.length) {
-        await ctx.db.update(games)
+        await db.update(games)
           .set(game)
           .where(eq(games.room_name, game.room_name))
           .execute()
       } else { // all players gone!
       console.log(`room ${game.room_name} closed`)
-      await ctx.db.delete(games)
+      await db.delete(games)
           .where(eq(games.room_name, game.room_name))
           .execute()
       }
       
       return true;
     }),
-  
+
   players: publicProcedure
     .input(z.object({ roomName: z.string() }))
-    .query(async ({ ctx, input }) => {
-      const game = await ctx.db.query.games.findFirst({
-        where: ({ room_name }, { eq, and }) => and(
-          eq(room_name, input.roomName),
-          // eq(host_ip, remote_addr)
-        ),
-        columns: {
-          id: true,
-          room_name: true,
-          player_list: true
+    .use(getGameMiddleware({
+      player_list: true
+    }))
+    .query(async ({ ctx: { game: { player_list } } }) => {
+      return player_list;
+    }),
+
+  checkIn: publicProcedure
+    .input(z.object({ roomName: z.string().min(3), playerName: z.string().min(3), socket_id: z.string().regex(/random-user-id:0.\d{6}/) }))
+    .use(getGameMiddleware({
+      id: true,
+      room_name: true,
+      player_list: true
+    }))
+    .mutation(async ({ ctx: { game }, input: { playerName, socket_id } }) => {
+      console.log(`${playerName} checked in as ${socket_id} to room ${game.room_name}`);
+      const res = await pusherServerClient.get({ path: `/channels/presence-${game.room_name}/users` });
+      if (res.status === 200) {
+        const body = await res.json();
+        const users = body.users;
+        console.log(`Connections to ${game.room_name} socket:======`);
+        console.log(users);
+        console.log(`end ${game.room_name} connections =======`);
+      }
+      for (let player in game.player_list) {
+        if (player === playerName) {
+          game.player_list[player] = socket_id
+        };
+        console.log(`send update{${playerName} => ${game.room_name}} to ${player}`);
+        try {
+          await pusherServerClient.trigger(
+            `room-${game.room_name}`,
+            'new-player',
+            {playerName, socket_id}
+          );
+        } catch (e) {
+          console.log(`Failed to send update to ${player}`)
+          console.error(e);
         }
-      }).execute();
-
-      if (!game) throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: `There is no active room: ${input.roomName}`,
-      });
-
-      return Object.keys(game.player_list);
-    })
+      }
+    }),
 });

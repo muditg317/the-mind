@@ -10,3 +10,5 @@ export const db = drizzle(
   }).connection(),
   { schema }
 );
+
+export type TheMindDatabase = typeof db;

@@ -18,11 +18,13 @@ import {
  */
 export const createTable = mysqlTableCreator((name) => `the-mind_${name}`);
 
-export const posts = createTable(
-  "post",
+export const games = createTable(
+  "games",
   {
     id: bigint("id", { mode: "number" }).primaryKey().autoincrement(),
-    name: varchar("name", { length: 256 }),
+    name: varchar("name", { length: 256 }).unique().notNull(),
+    host_ip: varchar("host_ip", { length: 256 }).notNull(),
+    password: varchar("password", { length: 50 }).notNull(),
     createdAt: timestamp("created_at")
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),

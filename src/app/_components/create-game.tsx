@@ -5,39 +5,49 @@ import { useState } from "react";
 
 import { api } from "~/trpc/react";
 
-export function CreatePost() {
+export function CreateGame() {
   const router = useRouter();
   const [name, setName] = useState("");
+  const [password, setPassword] = useState("");
 
-  const createPost = api.post.create.useMutation({
+  const createGame = api.games.create.useMutation({
     onSuccess: () => {
-      router.refresh();
+      router.push(`game/${name}`)
       setName("");
+      setPassword("");
     },
   });
 
-  return (
+  return (<>
+    <h2 className="text-2xl mb-6">Create a new room</h2>
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        createPost.mutate({ name });
+        createGame.mutate({ name, password });
       }}
       className="flex flex-col gap-2"
     >
       <input
         type="text"
-        placeholder="Title"
+        placeholder="Room name"
         value={name}
         onChange={(e) => setName(e.target.value)}
+        className="w-full rounded-full px-4 py-2 text-black"
+      />
+      <input
+        type="text"
+        placeholder="Password (keep it short)"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
         className="w-full rounded-full px-4 py-2 text-black"
       />
       <button
         type="submit"
         className="rounded-full bg-white/10 px-10 py-3 font-semibold transition hover:bg-white/20"
-        disabled={createPost.isLoading}
+        disabled={createGame.isLoading}
       >
-        {createPost.isLoading ? "Submitting..." : "Submit"}
+        {createGame.isLoading ? "Setting up game..." : "Launch Room!"}
       </button>
     </form>
-  );
+  </>);
 }

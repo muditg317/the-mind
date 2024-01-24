@@ -13,6 +13,8 @@
   },
   "dependencies": {
     "@planetscale/database": "^1.11.0",
+    "@radix-ui/react-alert-dialog": "^1.0.5",
+    "@radix-ui/react-slot": "^1.0.2",
     "@t3-oss/env-nextjs": "^0.7.1",
     "@tanstack/react-query": "^4.36.1",
     "@trpc/client": "^10.43.6",

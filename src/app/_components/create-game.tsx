@@ -7,14 +7,12 @@ import { api } from "~/trpc/react";
 
 export function CreateGame() {
   const router = useRouter();
-  const [name, setName] = useState("");
-  const [password, setPassword] = useState("");
+  const [roomName, setRoomName] = useState("");
+  const [hostName, setHostName] = useState("");
 
   const createGame = api.games.create.useMutation({
     onSuccess: () => {
-      router.push(`game/${name}`)
-      setName("");
-      setPassword("");
+      router.push(`game/${roomName}`);
     },
   });
 
@@ -23,22 +21,22 @@ export function CreateGame() {
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        createGame.mutate({ name, password });
+        createGame.mutate({ roomName, hostName });
       }}
       className="flex flex-col gap-2"
     >
       <input
         type="text"
         placeholder="Room name"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
+        value={roomName}
+        onChange={(e) => setRoomName(e.target.value)}
         className="w-full rounded-full px-4 py-2 text-black"
       />
       <input
         type="text"
-        placeholder="Password (keep it short)"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
+        placeholder="Your name"
+        value={hostName}
+        onChange={(e) => setHostName(e.target.value)}
         className="w-full rounded-full px-4 py-2 text-black"
       />
       <button

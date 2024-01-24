@@ -8,6 +8,7 @@ import {
   mysqlTableCreator,
   timestamp,
   varchar,
+  json,
 } from "drizzle-orm/mysql-core";
 
 /**
@@ -22,15 +23,16 @@ export const games = createTable(
   "games",
   {
     id: bigint("id", { mode: "number" }).primaryKey().autoincrement(),
-    name: varchar("name", { length: 256 }).unique().notNull(),
+    room_name: varchar("room_name", { length: 256 }).unique().notNull(),
     host_ip: varchar("host_ip", { length: 256 }).notNull(),
-    password: varchar("password", { length: 50 }).notNull(),
+    host_name: varchar("host_name", { length: 50 }).notNull(),
+    player_list: json("player_list").$type<string[]>().notNull(),
     createdAt: timestamp("created_at")
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
     updatedAt: timestamp("updatedAt").onUpdateNow(),
   },
   (example) => ({
-    nameIndex: index("name_idx").on(example.name),
+    nameIndex: index("name_idx").on(example.room_name),
   })
 );

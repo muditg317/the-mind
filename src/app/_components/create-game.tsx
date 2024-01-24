@@ -12,6 +12,7 @@ export function CreateGame() {
 
   const createGame = api.games.create.useMutation({
     onSuccess: () => {
+      localStorage.setItem("playerName", hostName);
       router.push(`game/${roomName}`);
     },
   });

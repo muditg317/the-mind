@@ -25,7 +25,8 @@ export function JoinGame({ existingRooms }: JoinGameProps) {
   const router = useRouter();
   const [playerName, setPlayerName] = useState("");
   const attemptJoin = api.games.attemptJoin.useMutation({
-    onSuccess: (roomName) => {
+    onSuccess: ({roomName,playerName}) => {
+      localStorage.setItem("playerName", playerName);
       router.push(`game/${roomName}`);
     }
   });
@@ -60,7 +61,6 @@ export function JoinGame({ existingRooms }: JoinGameProps) {
           </button>
         </React.Fragment>)
       : <p>No active games... Create one below!</p>}
-      
     </div>
   </>);
 }

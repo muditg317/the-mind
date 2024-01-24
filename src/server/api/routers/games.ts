@@ -18,6 +18,7 @@ export const gamesRouter = createTRPCRouter({
         host_name: input.hostName,
         player_list: [input.hostName]
       });
+      console.log(`created ${input.roomName} room`)
     }),
 
   getOpenRooms: publicProcedure.query(({ ctx }) => {
@@ -57,6 +58,49 @@ export const gamesRouter = createTRPCRouter({
         .where(eq(games.room_name, game.room_name))
         .execute()
       
-      return game.room_name;
+      console.log(`${input.playerName} joined ${game.room_name} room`)
+      return {
+        roomName: game.room_name,
+        playerName: input.playerName
+      };
+    }),
+
+  leaveGame: publicProcedure
+    .input(z.object({ roomName: z.string().min(3), playerName: z.string().min(3) }))
+    .mutation(async ({ ctx, input }) => {
+      // const remote_addr = ctx.headers.get('x-forwarded-for') || UNKOWN_HOST_IP;
+
+      const game = await ctx.db.query.games.findFirst({
+        where: ({ room_name }, { eq, and }) => and(
+          eq(room_name, input.roomName),
+          // eq(host_ip, remote_addr)
+        ),
+        columns: {
+          id: true,
+          room_name: true,
+          player_list: true
+        }
+      }).execute();
+
+      if (!game) throw new Error("No game with this name!");
+
+      if (!game.player_list.includes(input.playerName)) throw new Error(`Player ${input.playerName} not in room!`);
+
+      game.player_list = game.player_list.filter(playerName => playerName != input.playerName);
+
+      console.log(`${input.playerName} left ${game.room_name} room`)
+      if (game.player_list.length) {
+        await ctx.db.update(games)
+          .set(game)
+          .where(eq(games.room_name, game.room_name))
+          .execute()
+      } else { // all players gone!
+      console.log(`room ${game.room_name} closed`)
+      await ctx.db.delete(games)
+          .where(eq(games.room_name, game.room_name))
+          .execute()
+      }
+      
+      return true;
     }),
 });

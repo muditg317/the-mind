@@ -48,7 +48,7 @@ export function JoinGame({ existingRooms }: JoinGameProps) {
           <button
             className="rounded-full bg-white/10 px-10 py-3 font-semibold transition hover:bg-white/20"
             disabled={attemptJoin.isLoading}
-            onClick={e => {
+            onClick={() => {
               if (playerName) {
                 attemptJoin.mutate({
                   roomName: room,

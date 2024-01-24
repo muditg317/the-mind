@@ -1,5 +1,5 @@
-import { eq, notLike } from "drizzle-orm/sql/expressions/conditions";
-import { object, z } from "zod";
+import { eq } from "drizzle-orm/sql/expressions/conditions";
+import { z } from "zod";
 
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { games } from "~/server/db/schema";
@@ -10,7 +10,7 @@ export const gamesRouter = createTRPCRouter({
   create: publicProcedure
     .input(z.object({ roomName: z.string().min(3), hostName: z.string().min(3) }))
     .mutation(async ({ ctx, input }) => {
-      const remote_addr = ctx.headers.get('x-forwarded-for') || UNKOWN_HOST_IP;
+      const remote_addr = ctx.headers.get('x-forwarded-for') ?? UNKOWN_HOST_IP;
 
       await ctx.db.insert(games).values({
         room_name: input.roomName,
@@ -33,7 +33,7 @@ export const gamesRouter = createTRPCRouter({
   attemptJoin: publicProcedure
     .input(z.object({ roomName: z.string().min(3), playerName: z.string().min(3) }))
     .mutation(async ({ ctx, input }) => {
-      // const remote_addr = ctx.headers.get('x-forwarded-for') || UNKOWN_HOST_IP;
+      // const remote_addr = ctx.headers.get('x-forwarded-for') ?? UNKOWN_HOST_IP;
 
       const game = await ctx.db.query.games.findFirst({
         where: ({ room_name }, { eq, and }) => and(
@@ -68,7 +68,7 @@ export const gamesRouter = createTRPCRouter({
   leaveGame: publicProcedure
     .input(z.object({ roomName: z.string().min(3), playerName: z.string().min(3) }))
     .mutation(async ({ ctx, input }) => {
-      // const remote_addr = ctx.headers.get('x-forwarded-for') || UNKOWN_HOST_IP;
+      // const remote_addr = ctx.headers.get('x-forwarded-for') ?? UNKOWN_HOST_IP;
 
       const game = await ctx.db.query.games.findFirst({
         where: ({ room_name }, { eq, and }) => and(

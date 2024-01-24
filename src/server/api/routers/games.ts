@@ -10,8 +10,7 @@ import { type TheMindDatabase } from "@server/db"
 
 const UNKOWN_HOST_IP = "UNKOWN_HOST_IP";
 
-type NotUndef<T> = T extends undefined ? never : T;
-type GamesColumnQuery = Partial<Record<keyof NotUndef<TheMindDatabase["_"]["schema"]>["games"]["columns"], boolean>>
+type GamesColumnQuery = Partial<Record<keyof NonNullable<TheMindDatabase["_"]["schema"]>["games"]["columns"], boolean>>
 
 function getGameMiddleware<Cols extends GamesColumnQuery>(columns: Cols) {
   return experimental_standaloneMiddleware<{
@@ -152,13 +151,16 @@ export const gamesRouter = createTRPCRouter({
       console.log(`${playerName} checked in as ${socket_id} to room ${game.room_name}`);
       const res = await pusherServerClient.get({ path: `/channels/presence-${game.room_name}/users` });
       if (res.status === 200) {
-        const body = await res.json();
-        const users = body.users;
-        console.log(`Connections to ${game.room_name} socket:======`);
-        console.log(users);
-        console.log(`end ${game.room_name} connections =======`);
+        try {
+          const { users } = z.object({users: z.object({})}).parse(await res.text())
+          if (users) {
+            console.log(`Connections to ${game.room_name} socket:======`);
+            console.log(users);
+            console.log(`end ${game.room_name} connections =======`);
+          }
+        } catch (_) {}
       }
-      for (let player in game.player_list) {
+      for (const player in game.player_list) {
         if (player === playerName) {
           game.player_list[player] = socket_id
         };

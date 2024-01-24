@@ -10,7 +10,6 @@ import {
   varchar,
   json,
 } from "drizzle-orm/mysql-core";
-import { type PlanetScaleDatabase } from "drizzle-orm/planetscale-serverless"
 
 /**
  * This is an example of how to use the multi-project schema feature of Drizzle ORM. Use the same

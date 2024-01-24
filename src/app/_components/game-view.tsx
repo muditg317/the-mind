@@ -75,7 +75,7 @@ function GameView_Inner({ room, initialPlayers, playerName }: { room: string, in
 }
 
 export default function GameView({ room, initialPlayers }: { room: string, initialPlayers: Record<string,string>}) {
-  const playerName = typeof window !== "undefined" && localStorage.getItem("playerName") || "";
+  const playerName = typeof window !== "undefined" ? (localStorage.getItem("playerName") ?? "") : "";
   // console.log(`loaded playername ${playerName}`);
 
   return (

@@ -7,10 +7,11 @@ import { useShallow } from "zustand/react/shallow"
 import { env } from "@env"
 import useLazyRef from "src/hooks/useLazyRef"
 
-interface PusherProps {
-  // channel_slug: string,
-  // player_name: string;
-}
+// interface PusherProps extends Record<string,string> {
+//   // channel_slug: string,
+//   // player_name: string;
+// }
+type PusherProps = object;
 
 interface PusherState {
   pusherClient: Pusher;
@@ -75,7 +76,7 @@ export function PusherProvider({children, ...initialPusherProps}: React.PropsWit
       pusherClient.disconnect()
       Pusher.instances.splice(0, Pusher.instances.length, ...Pusher.instances.filter(pusherInstance => pusherInstance === pusherClient));
       const channels = get().channels;
-      for (let channelId in channels) {
+      for (const channelId in channels) {
         get().closeChannel(channelId);
       }
       set({
@@ -159,7 +160,7 @@ export function usePusherStore<T>(
   if (!pusherContext) throw new Error("must call usePStore from within PusherContext.Provider!");
   return useStore(
     pusherContext,
-    selector as any,
+    selector!,
     // equalityFn
   );
 }
@@ -187,12 +188,12 @@ export function usePusherChannel(channelProps: ChannelProps) {
   return channel;
 }
 
-export function usePusherEventSubscribe(channelProps: ChannelProps, eventName: string, callback: Function, context?: any): void {
+export function usePusherEventSubscribe<Args extends Array<unknown>, Ret>(channelProps: ChannelProps, eventName: string, callback: (...args: Args) => Ret, context?: unknown): void {
   const channel = usePusherChannel(channelProps);
   channel.channel.bind(eventName, callback, context);
 }
 
-export function usePusherPresenceEventSubscribe(channelProps: ChannelProps, eventName: string, callback: Function, context?: any): void {
+export function usePusherPresenceEventSubscribe<Args extends Array<unknown>, Ret>(channelProps: ChannelProps, eventName: string, callback: (presenceChannel: PresenceChannel, ...args: Args) => Ret, context?: unknown): void {
   const channel = usePusherChannel(channelProps);
-  channel.presenceChannel.bind(eventName, (...args: any[]) => callback(channel.presenceChannel, ...args), context);
+  channel.presenceChannel.bind(eventName, (...args: Args) => callback(channel.presenceChannel, ...args), context);
 }

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { type PresenceChannel } from "pusher-js"
 
 import { api } from "@_trpc/react";
-import { PusherProvider, usePusherChannel, usePusherEventSubscribe, usePusherPresenceEventSubscribe } from "@context/pusher"
+import { PusherProvider, usePusherChannel, usePusherEventSubscribe, usePusherPresenceEventSubscribe } from "@context/pusher.old"
 
 
 
@@ -76,10 +76,18 @@ function GameView_Inner({ room, initialPlayers, playerName }: { room: string, in
 
 export default function GameView({ room, initialPlayers }: { room: string, initialPlayers: Record<string,string>}) {
   const playerName = typeof window !== "undefined" ? (localStorage.getItem("playerName") ?? "") : "";
-  // console.log(`loaded playername ${playerName}`);
+
+  // const checkIn = api.games.checkIn.useMutation({
+  //   onSuccess: console.log
+  // });
+  // checkIn.mutate({
+  //   roomName: room,
+  //   playerName,
+  //   socket_id: 
+  // })
 
   return (
-  <PusherProvider>
+  <PusherProvider player_name={playerName}>
     <GameView_Inner room={room} initialPlayers={initialPlayers} playerName={playerName} />
   </PusherProvider>
   );

@@ -50,7 +50,7 @@ export const gamesRouter = createTRPCRouter({
         room_name: input.roomName,
         host_ip: remote_addr,
         host_name: input.hostName,
-        player_list: {[input.hostName]: ""}
+        player_list: {[input.hostName]: false}
       });
       console.log(`created ${input.roomName} room`)
     }),
@@ -79,7 +79,7 @@ export const gamesRouter = createTRPCRouter({
       })
 
       console.log(`Registering ${playerName} in ${game.room_name}`);
-      game.player_list[playerName] = "";
+      game.player_list[playerName] = false;
 
       await db.update(games)
         .set(game)
@@ -113,7 +113,7 @@ export const gamesRouter = createTRPCRouter({
         message: `Player ${playerName} is not in the room!`
       })
 
-      game.player_list[playerName] = "";
+      game.player_list[playerName] = false;
 
       console.log(`${playerName} left ${game.room_name} room`)
       if (game.player_list.length) {
@@ -141,14 +141,14 @@ export const gamesRouter = createTRPCRouter({
     }),
 
   checkIn: publicProcedure
-    .input(z.object({ roomName: z.string().min(3), playerName: z.string().min(3), socket_id: z.string().regex(/random-user-id:0.\d{6}/) }))
+    .input(z.object({ roomName: z.string().min(3), playerName: z.string().min(3) }))
     .use(getGameMiddleware({
       id: true,
       room_name: true,
       player_list: true
     }))
-    .mutation(async ({ ctx: { game }, input: { playerName, socket_id } }) => {
-      console.log(`${playerName} checked in as ${socket_id} to room ${game.room_name}`);
+    .mutation(async ({ ctx: { game }, input: { playerName } }) => {
+      console.log(`${playerName} checked in to room ${game.room_name}`);
       const res = await pusherServerClient.get({ path: `/channels/presence-${game.room_name}/users` });
       if (res.status === 200) {
         try {
@@ -162,14 +162,14 @@ export const gamesRouter = createTRPCRouter({
       }
       for (const player in game.player_list) {
         if (player === playerName) {
-          game.player_list[player] = socket_id
+          game.player_list[player] = true
         };
         console.log(`send update{${playerName} => ${game.room_name}} to ${player}`);
         try {
           await pusherServerClient.trigger(
-            `${game.room_name}`,
+            `room-${game.room_name}-game`,
             'new-player',
-            {playerName, socket_id}
+            {playerName}
           );
         } catch (e) {
           console.log(`Failed to send update to ${player}`)

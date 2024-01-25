@@ -7,13 +7,13 @@ import { useShallow } from "zustand/react/shallow"
 import { env } from "@env"
 import useLazyRef from "src/hooks/useLazyRef"
 
-// interface PusherProps extends Record<string,string> {
-//   // channel_slug: string,
-//   // player_name: string;
-// }
-type PusherProps = object;
+interface PusherProps {
+  // channel_slug: string,
+  player_name: string;
+}
+// type PusherProps = object;
 
-interface PusherState {
+interface PusherState extends PusherProps {
   pusherClient: Pusher;
   reconnect(connectionInitializer: () => Pusher): void;
   propsChanged(newProps: PusherProps): void;
@@ -39,22 +39,28 @@ type ChannelInfo = {
 type PusherStoreApi = StoreApi<PusherState>;
 
 function getConnectedPusherInstance({
-  // channel_slug, player_name
+  // channel_slug, 
+  player_name
 }: PusherProps) {
   if (Pusher.instances.length) {
     const client = Pusher.instances[0]!;
     client.connect();
     return client;
   }
-  const randomUserId = `random-user-id:${Math.random().toFixed(6)}`;
-  // const pusher_user_id = `${channel_slug}-${player_name}`
+  // const randomUserId = `random-user-id:${Math.random().toFixed(6)}`;
+  const randomUserId = player_name;
   
   const pusher = new Pusher(env.NEXT_PUBLIC_PUSHER_KEY, {
     cluster: env.NEXT_PUBLIC_PUSHER_CLUSTER,
-    authEndpoint: '/api/pusher/auth-channel',
-    auth: {
+    channelAuthorization: {
+      endpoint: '/api/pusher/auth-channel',
+      transport: "ajax",
       headers: { randomUserId },
     },
+    // authEndpoint: '/api/pusher/auth-channel',
+    // auth: {
+    //   headers: { randomUserId },
+    // },
   });
 
   console.log(`created new pusher: ${randomUserId}`);
@@ -69,7 +75,7 @@ const PusherContext = createContext<PusherStoreApi|null>(null);
 
 export function PusherProvider({children, ...initialPusherProps}: React.PropsWithChildren<PusherProps>) {
   const storeRef = useLazyRef(() => createStore<PusherState>((set, get, _state) => ({
-    // ...pusherProps,
+    ...initialPusherProps,
     reconnect: (connectionInitializer: () => Pusher) => {
       console.log(`Reconnect pusher store`);
       const pusherClient = get().pusherClient;

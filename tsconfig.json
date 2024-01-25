@@ -30,9 +30,10 @@
       // "~/*": ["./src/*"],
       "@env": ["./src/env"],
       "@components/*": ["./src/app/_components/*"],
-      "@lib/*": ["./src/lib/*"],
-      "@context/*": ["./src/context/*"],
       "@server/*": ["./src/server/*"],
+      "@context/*": ["./src/context/*"],
+      "@hooks/*": ["./src/hooks/*"],
+      "@lib/*": ["./src/lib/*"],
       "@_trpc/*": ["./src/trpc/*"],
       "@styles/*": ["./src/styles/*"]
     }

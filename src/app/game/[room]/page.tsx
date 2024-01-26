@@ -8,7 +8,7 @@ const GameViewNoSSR = dynamic(() => import('@components/game-view'), { ssr: fals
 
 export default async function Page({ params }: {params:{room:string}}) {
   const room = params.room;
-  let players: Record<string, string>;
+  let players: Record<string, boolean>;
   try {
     players = await api.games.players.query({
       roomName: room

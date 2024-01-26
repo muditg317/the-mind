@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 import { type PresenceChannel } from "pusher-js"
@@ -10,9 +10,9 @@ import { PusherProvider, usePusherChannel, usePusherEventSubscribe, usePusherPre
 
 
 
-function GameView_Inner({ room, initialPlayers, playerName }: { room: string, initialPlayers: Record<string,string>, playerName: string }) {
+function GameView_Inner({ room, initialPlayers: _, playerName }: { room: string, initialPlayers: Record<string,boolean>, playerName: string }) {
   const router = useRouter();
-  const [playerList, _setPlayerList] = useState<Record<string, string>>(initialPlayers);
+  // const [playerList, setPlayerList] = useState<Record<string, string>>(initialPlayers);
 
   const leaveGameMutation = api.games.leaveGame.useMutation()
   const exitGame = useCallback(() => {
@@ -38,7 +38,7 @@ function GameView_Inner({ room, initialPlayers, playerName }: { room: string, in
       //   });
       // }
     };
-  }, [playerName, playerList, exitGame]);
+  }, [playerName, exitGame]);
 
   const channel = usePusherChannel({ room });
   // const checkIn = api.games.checkIn.useMutation({
@@ -67,14 +67,14 @@ function GameView_Inner({ room, initialPlayers, playerName }: { room: string, in
       NAME: {playerName}
     </p>
     <p>
-      PLAYERS: [{Object.entries(playerList).map(([player_name, info]) => (
+      {/* PLAYERS: [{Object.entries(playerList).map(([player_name, info]) => (
         <span key={player_name}>&nbsp;{player_name}-|{info}|</span>
-      ))}]
+      ))}] */}
     </p>
   </>
 }
 
-export default function GameView({ room, initialPlayers }: { room: string, initialPlayers: Record<string,string>}) {
+export default function GameView({ room, initialPlayers }: { room: string, initialPlayers: Record<string,boolean>}) {
   const playerName = typeof window !== "undefined" ? (localStorage.getItem("playerName") ?? "") : "";
 
   // const checkIn = api.games.checkIn.useMutation({

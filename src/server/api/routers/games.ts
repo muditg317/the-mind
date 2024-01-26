@@ -6,7 +6,6 @@ import { createTRPCRouter, publicProcedure } from "@server/api/trpc";
 import { games } from "@server/db/schema";
 import { pusherServer } from "@pusher/server";
 import { type TheMindDatabase } from "@server/db"
-import { gameChannelName } from "@lib/mind";
 
 const UNKOWN_HOST_IP = "UNKOWN_HOST_IP";
 
@@ -181,26 +180,4 @@ export const gamesRouter = createTRPCRouter({
   clear: publicProcedure.mutation(async ({ ctx: { db }}) => {
     await db.delete(games).execute();
   }),
-
-  post: publicProcedure
-    .input(z.object({text: z.string(), roomName: z.string(), playerName: z.string() }))
-    .mutation(async ({ input: { text, roomName, playerName }}) => {
-      const channelNameGame = gameChannelName(roomName);
-      console.log(`Got message |${text}| from |${playerName}| in room |${roomName}|`);
-      
-      try {
-        await pusherServer.trigger(channelNameGame, 'mind:message', `${playerName}: ${text}`)
-      } catch (e) {
-        console.error(`failed to publish ${text} message in room ${roomName}...`, e);
-      }
-
-      //   await db.message.create({
-      //     data: {
-      //       text,
-      //       chatRoomId: roomId,
-      //     },
-      //   })
-
-      return { success: true };
-    }),
 });

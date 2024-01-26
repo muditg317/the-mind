@@ -14,10 +14,10 @@ export const pusherServer = new PusherServer({
   useTLS: true,
 })
 
-export const pusherServerFetch = async <const Z extends z.ZodType>(path: string, parser: Z) => {
+export const pusherServerFetch = async <Out, Def extends z.ZodTypeDef, In>(path: string, parser: z.ZodType<Out, Def, In>) => {
   const res = await pusherServer.get({ path });
   if (res.status !== 200) throw new Error(`pusher.get on ${path} failed with code=${res.status} -- ${res.statusText}`);
-  return parser.parse(await res.json()) as z.infer<Z>;
+  return parser.parse(await res.json());
 }
 
 export const getUsersInRoom = async (roomName: string) => {

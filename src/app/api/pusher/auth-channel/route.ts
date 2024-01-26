@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 
 import { pusherServer } from "@pusher/server"
-import { gameChannelName, mindUserZod, userId } from "@lib/mind";
+import { mindUserZod, userId } from "@lib/mind";
 
 
 export async function POST(req: NextRequest) {

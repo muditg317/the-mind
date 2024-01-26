@@ -5,7 +5,8 @@ import type { PresenceChannel } from "pusher-js";
 
 import { api } from "@_trpc/react"
 import { PusherClientProvider, bindPresenceMemberAdded, bindPresenceMemberRemoved, bindPresenceSubscribed, unbindPresenceMemberAdded, unbindPresenceMemberRemoved, unbindPresenceSubscribed, usePusherClient } from "@pusher/react";
-import { MindUser, MindUserId, MindUserPresence, gameChannelName } from "@lib/mind";
+import type { MindUser, MindUserId, MindUserPresence } from "@lib/mind";
+import { gameChannelName } from "@lib/mind";
 import { presenceChannelName } from "@pusher/shared";
 
 
@@ -25,14 +26,14 @@ function Content({ playerName, roomName }: MindUser) {
   const [input, setInput] = useState("");
   const [members, setMembers] = useState<MindUserPresence[]>([]);
 
-  const postMessage = api.games.post.useMutation({
+  const postMessage = api.chat.post.useMutation({
     onSuccess: () => {
       setInput("");
     }
   });
 
   const sendMessage = async (text: string) => {
-    postMessage.mutate({ text, roomName, playerName });
+    postMessage.mutate({ text, mindUser: {roomName, playerName} });
   }
 
   useEffect(() => {
@@ -69,7 +70,7 @@ function Content({ playerName, roomName }: MindUser) {
       pusherClient.unsubscribe(gameChannel_name);
       pusherClient.unsubscribe(gamePresenceChannel_name);
     }
-  }, []);
+  }, [pusherClient, roomName]);
 
   return (<>
     <div>

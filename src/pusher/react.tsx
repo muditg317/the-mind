@@ -1,8 +1,8 @@
 import { createContext, useContext } from "react";
 import PusherClient from "pusher-js";
-import { PresenceChannel } from "pusher-js";
+import type { PresenceChannel } from "pusher-js";
 
-import type { MindUser, MindUserPresence } from "@lib/mind";
+import type { MindUser } from "@lib/mind";
 import useLazyRef from "@hooks/useLazyRef";
 import { env } from "@env";
 

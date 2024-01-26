@@ -9,9 +9,11 @@ import type { MindUser, MindUserId, MindUserPresence } from "@lib/mind";
 import { gameChannelName } from "@lib/mind";
 import { presenceChannelName } from "@pusher/shared";
 
-
+const defaultNames = ["Olivia", "Ashleigh", "Emilio", "Ariana", "Belen", "Johnny", "Carolyn", "Lillianna", "Patience", "Lara", "Aniya", "Aleena", "Beau", "Brennen", "Yazmin", "Aubrey", "Luciano", "Kathleen", "Penelope", "Krish", "Kallie", "Branden", "Shirley", "Heidi", "Chaim", "Sydnee", "Trystan", "Madelynn", "Xander", "Marcos", "Hezekiah", "Jimena", "Ruben", "Sarah", "Nataly", "Nick", "Heaven", "Gabriel", "Martin", "Brylee", "Tara", "Randall", "Braelyn", "Adam", "Aisha", "Harrison", "Sylvia", "Jorden", "Jaylee", "Marc", "Reagan", "Ivy", "Lyric", "Memphis", "Alayna", "Reid", "Blaine", "Rubi", "Delilah", "Joel", "Emerson", "Seamus", "Ryan", "Alexandra", "Laila", "Jordyn", "Marvin", "Derrick", "Trey", "Brenda", "Aidyn", "Dwayne", "Jamar", "Trenton", "Yamilet", "Stephany", "Broderick", "Jamarcus", "Renee", "Samson", "Kate", "Edwin", "Averie", "Lilia", "Wade", "Henry", "Molly", "Matteo", "Maurice", "Addison", "Ronald", "Arianna", "Camden", "Tate", "Josiah", "Keely", "Amiya", "Aria", "Garrett", "Atticus"];
 export default function Page() {
-  const playerName = typeof window !== "undefined" ? (localStorage.getItem("playerName") ?? "") : "";
+  const defaultName = defaultNames[Math.floor(Math.random() * defaultNames.length)]!;
+  const playerName = typeof window !== "undefined" ? (localStorage.getItem("playerName") ?? defaultName) : defaultName;
+  typeof window !== "undefined" && localStorage.setItem("playerName", playerName);
   const roomName = "bruh";
   return (
     <PusherClientProvider mindUser={{playerName, roomName}}>

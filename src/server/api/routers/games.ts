@@ -177,4 +177,8 @@ export const gamesRouter = createTRPCRouter({
         }
       }
     }),
+
+  clear: publicProcedure.mutation(async ({ ctx: { db }}) => {
+    await db.delete(games).execute();
+  }),
 });

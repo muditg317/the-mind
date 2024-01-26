@@ -31,6 +31,7 @@
       "@env": ["./src/env"],
       "@components/*": ["./src/app/_components/*"],
       "@server/*": ["./src/server/*"],
+      "@pusher/*": ["./src/pusher/*"],
       "@context/*": ["./src/context/*"],
       "@hooks/*": ["./src/hooks/*"],
       "@lib/*": ["./src/lib/*"],

@@ -21,7 +21,7 @@ export default function Page() {
     });
 
     const sendMessage = async (text: string) => {
-        postMessage.mutate({ text, roomId });
+        postMessage.mutate({ text, roomName: roomId });
     }
 
     useEffect(() => {

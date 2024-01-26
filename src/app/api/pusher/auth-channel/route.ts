@@ -1,67 +1,35 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 
-import { pusherServerClient } from "@server/pusher"
-import { pusherServer } from "@lib/pusher/server"
+import { pusherServer } from "@pusher/server"
+import { gameChannelName, mindUserZod, userId } from "@lib/mind";
+
 
 export async function POST(req: NextRequest) {
+  // console.log(await req.text());
   const query_params = Object.fromEntries(new URLSearchParams(await req.text()).entries());
-  console.log(query_params)
-  const { channel_name, socket_id } = z
+  const { channel_name, socket_id, playerName, roomName } = z
     .object({ channel_name: z.string(), socket_id: z.string() })
+    .merge(mindUserZod)
     .parse(query_params);
 
-  const id = req.headers.get("randomUserId")
-
-  if (!id || typeof id !== 'string') {
-    console.log("no valid user: ", id)
-    return NextResponse.json("lol", { status: 404 })
+  if (!playerName || typeof playerName !== 'string') {
+    console.log(`Provided playerName not valid: ${playerName}`);
+    return NextResponse.json({
+      "error": `Provided playerName not valid: ${playerName}`,
+    }, { status: 404 });
   }
 
-  const presenceData = {
-    user_id: id,
-    user_data: { user_id: id },
-  }
+  const user_id = userId({roomName, playerName});
 
-  const auth = pusherServer.authorizeChannel(
-    socket_id,
-    channel_name,
-    presenceData
-  )
-
-  return NextResponse.json(auth);
-}
-
-async function _oldPOST(req: NextRequest) {
-  const query_params = Object.fromEntries(new URLSearchParams(await req.text()).entries());
-  console.log(query_params)
-  const { channel_name, socket_id } = z
-    .object({ channel_name: z.string(), socket_id: z.string() })
-    .parse(query_params)
-  
-  const user_id = req.headers.get("randomUserId")
-
-  if (!user_id || typeof user_id !== 'string') {
-    console.log("no valid user: ", user_id)
-    return NextResponse.json("lol", { status: 404 })
-  }
-  const auth = pusherServerClient.authorizeChannel(socket_id, channel_name, {
+  const auth = pusherServer.authorizeChannel(socket_id, channel_name, {
     user_id,
     user_info: {
-      name: 'superman',
+      user_id,
+      playerName,
+      roomName
     },
   });
-  console.log(`Authorized user ${user_id} (socket ${socket_id}) for ${channel_name}`)
-  console.log(auth);
-
-  // const res = await pusherServerClient.get({ path: `/channels/${channel_name}/users` });
-  // if (res.status === 200) {
-  //   const body = await res.json();
-  //   const users = body.users;
-  //   console.log(`Connections to ${channel_name} socket:======`);
-  //   console.log(users);
-  //   console.log(`end ${channel_name} connections =======`);
-  // }
-
+  console.log(`Authorized ${channel_name} channel for ${playerName} (socket ${socket_id}) in room ${roomName}`)
   return NextResponse.json(auth);
 }

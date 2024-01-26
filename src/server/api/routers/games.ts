@@ -4,9 +4,9 @@ import { z } from "zod";
 import { TRPCError, experimental_standaloneMiddleware } from "@trpc/server"
 import { createTRPCRouter, publicProcedure } from "@server/api/trpc";
 import { games } from "@server/db/schema";
-import { pusherServerClient } from "@server/pusher";
+import { pusherServer } from "@pusher/server";
 import { type TheMindDatabase } from "@server/db"
-import { pusherServer } from "@lib/pusher/server";
+import { gameChannelName } from "@lib/mind";
 
 const UNKOWN_HOST_IP = "UNKOWN_HOST_IP";
 
@@ -149,7 +149,7 @@ export const gamesRouter = createTRPCRouter({
     }))
     .mutation(async ({ ctx: { game }, input: { playerName } }) => {
       console.log(`${playerName} checked in to room ${game.room_name}`);
-      const res = await pusherServerClient.get({ path: `/channels/presence-${game.room_name}/users` });
+      const res = await pusherServer.get({ path: `/channels/presence-${game.room_name}/users` });
       if (res.status === 200) {
         try {
           const { users } = z.object({users: z.object({})}).parse(await res.text())
@@ -166,7 +166,7 @@ export const gamesRouter = createTRPCRouter({
         };
         console.log(`send update{${playerName} => ${game.room_name}} to ${player}`);
         try {
-          await pusherServerClient.trigger(
+          await pusherServer.trigger(
             `room-${game.room_name}-game`,
             'new-player',
             {playerName}
@@ -183,23 +183,24 @@ export const gamesRouter = createTRPCRouter({
   }),
 
   post: publicProcedure
-    .input(z.object({text: z.string(), roomId: z.string()}))
-    .mutation(async ({ input: { text, roomId }}) => {
-        console.log(`Got message |${text}| in room |${roomId}|`);
-        
-        try {
-          await pusherServer.trigger(roomId, 'message', text)
-        } catch (e) {
-          console.error(`failed to publish ${text} message in room ${roomId}...`, e);
-        }
+    .input(z.object({text: z.string(), roomName: z.string(), playerName: z.string() }))
+    .mutation(async ({ input: { text, roomName, playerName }}) => {
+      const channelNameGame = gameChannelName(roomName);
+      console.log(`Got message |${text}| from |${playerName}| in room |${roomName}|`);
+      
+      try {
+        await pusherServer.trigger(channelNameGame, 'mind:message', `${playerName}: ${text}`)
+      } catch (e) {
+        console.error(`failed to publish ${text} message in room ${roomName}...`, e);
+      }
 
-        //   await db.message.create({
-        //     data: {
-        //       text,
-        //       chatRoomId: roomId,
-        //     },
-        //   })
+      //   await db.message.create({
+      //     data: {
+      //       text,
+      //       chatRoomId: roomId,
+      //     },
+      //   })
 
-        return { success: true };
+      return { success: true };
     }),
 });

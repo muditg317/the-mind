@@ -8,6 +8,14 @@ await import("./src/env.js");
 const config = {
   compiler: {
     styledComponents: true
+  },
+  experimental: {
+    serverActions: {
+      allowedOrigins: [
+        "https://ideal-space-tribble-q49v64jg492gw4-3000.app.github.dev",
+        "https://ideal-space-tribble-q49v64jg492gw4-*.app.github.dev",
+      ]
+    }
   }
 };
 

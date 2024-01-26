@@ -1,28 +1,33 @@
 import { useCallback, useEffect, useState } from "react";
-import type { PresenceChannel } from "pusher-js";
+import type { Channel, PresenceChannel } from "pusher-js";
 
 import { type PresenceFromDataAndId, presenceChannelName } from "@pusher/shared";
 import { bindPresenceMemberAdded, bindPresenceMemberRemoved, bindPresenceSubscribed, unbindPresenceMemberAdded, unbindPresenceMemberRemoved, unbindPresenceSubscribed, usePusherClient } from "@pusher/react";
 import useLazyRef from "@hooks/useLazyRef";
+import {  } from "@trpc/react-query/shared";
+import { UseMutationResult } from "@tanstack/react-query";
+import { EmptyObj } from "@lib/utils";
 
-export function usePresenceChannel(base_channel_name: string) {
+export function useChannel(channel_name: string) {
   const pusherClient = usePusherClient();
-  const presence_channel_name = presenceChannelName(base_channel_name);
-  const presenceChannelRef = useLazyRef(
+  const channelRef = useLazyRef(
     () => {
-      let channel = pusherClient.channel(presence_channel_name);
-      if (!channel) channel = pusherClient.subscribe(presence_channel_name);
-      return channel as PresenceChannel;
+      let channel = pusherClient.channel(channel_name);
+      if (!channel) channel = pusherClient.subscribe(channel_name);
+      return channel;
     },
-    useCallback((channel: PresenceChannel) => {
+    useCallback((channel: Channel) => {
       if (channel.subscribed) {
         channel.unbind_all();
-        pusherClient.unsubscribe(presence_channel_name);
+        pusherClient.unsubscribe(channel_name);
       }
-    }, [pusherClient, presence_channel_name])
+    }, [pusherClient, channel_name])
   );
 
-  return presenceChannelRef.current;
+  return channelRef.current;
+}
+export function usePresenceChannel(base_channel_name: string) {
+  return useChannel(presenceChannelName(base_channel_name)) as PresenceChannel;
 }
 
 export function useMemberTracker<
@@ -62,4 +67,27 @@ export function useMemberTracker<
   }, [presenceChannel, onMemberLoad]);
 
   return storedMembers;
+}
+
+export function useMutationOnSubscribe<TData, TError, TVariables, TContext>(base_channel_name: string, mutation: UseMutationResult<TData, TError, TVariables, TContext>, mutationData: TVariables) {
+  const channel = useChannel(base_channel_name);
+
+  useEffect(() => {
+    // const presenceMemRemoveCb = bindPresenceMemberRemoved<UserData, UserId, PresenceData>(channel, ({id}) => {
+    //   // console.log("removed", id);
+    //   setStoredMembers(members => members.filter(member => member.user_id !== id));
+    // })
+    // // console.log("set up member tracking");
+    const callback = (_data: EmptyObj) => {
+      // console.log("pusher subscribed!", base_channel_name, "data:", data);
+      mutation.mutate(mutationData);
+    }
+    channel.bind("pusher:subscription_succeeded", callback);
+
+    return () => {
+      // console.log("tear down member tracking");
+      // unbindPresenceMemberRemoved(channel, presenceMemRemoveCb);
+      channel.unbind("pusher:subscription_succeeded", callback);
+    }
+  }, [channel]);
 }

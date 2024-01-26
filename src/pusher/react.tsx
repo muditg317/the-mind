@@ -8,17 +8,18 @@ import { env } from "@env";
 import type { PresenceFromDataAndId } from "./shared";
 
 PusherClient.logToConsole = true;
-PusherClient.log = (message: string) => {
-  if (typeof message !== "string") {
-    console.log(message);
-    return
-  }
-  if (message.includes("Error")) {
-    const err = new Error();
-    console.log(message, "<-- had error");
-    console.error(err.stack, "<-- the stack");
-  }
-}
+// PusherClient.log = (message: string) => {
+//   if (typeof message !== "string") {
+//     console.log(message);
+//     return
+//   }
+//   if (message.includes("Error")) {
+//     const err = new Error();
+//     console.log(message, "<-- had error");
+//     console.error(err.stack, "<-- the stack");
+//   }
+//   console.log(message);
+// }
 const PusherClientContext = createContext<PusherClient|undefined>(undefined);
 
 interface PusherClientProviderProps {
@@ -39,10 +40,10 @@ export function PusherClientProvider({ mindUser, children }: React.PropsWithChil
         endpoint: "api/pusher/auth-user",
         transport: "ajax",
         params: { ...mindUser },
-      }
+      },
     });
     
-    pusherClient.signin();
+    // pusherClient.signin();
     
     typeof window !== "undefined" && console.log(pusherClient);
     return pusherClient;
@@ -61,6 +62,29 @@ export const usePusherClient = () => {
   return pusherClient;
 }
 
+// type PresenceCallback<T> = (data: T) => void;
+// type PresenceCallbackMap<
+//   UserData,
+//   UserId extends string,
+//   PresenceData extends PresenceFromDataAndId<UserData, UserId>
+// > = {
+//   "pusher:subscription_succeeded": PresenceCallback<PresenceSubscribedCbData<UserData, UserId, PresenceData>>;
+//   // "pusher:subscription_succeeded": PresenceCallback<PresenceSubscribedCbData<UserData, UserId, PresenceData>>;
+//   // [channel: string]: PresenceCallback<PresenceSubscribedCbData<unknown, unknown, unknown>>
+// }
+
+// function bindPresenceChannel<
+//     const TChannelName extends string,
+//     UserData,
+//     UserId extends string,
+//     PresenceData extends PresenceFromDataAndId<UserData, UserId>
+//   >(
+//   presenceChannel: PresenceChannel,
+//   channel_name: TChannelName,
+//   callback: PresenceCallbackMap<UserData, UserId, PresenceData>[TChannelName]
+// ) {
+
+// }
 
 
 type PresenceSubscribedCbData<UserData, UserId extends string, PresenceData extends PresenceFromDataAndId<UserData, UserId>> = {

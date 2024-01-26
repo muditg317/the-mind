@@ -15,7 +15,7 @@ function GameView_Inner({ room, initialPlayers: _, playerName }: { room: string,
   // const [playerList, setPlayerList] = useState<Record<string, string>>(initialPlayers);
 
   const leaveGameMutation = api.games.leaveGame.useMutation()
-  const exitGame = useCallback(() => {
+  const exitGame = useCallback((doNav: boolean) => {
     if (leaveGameMutation.isIdle) {
       leaveGameMutation.mutate({
         roomName: room,
@@ -27,16 +27,12 @@ function GameView_Inner({ room, initialPlayers: _, playerName }: { room: string,
 
   useEffect(() => {
     if (!playerName) {
-      exitGame();
+      exitGame(true);
+      return;
     }
 
     return () => {
-      // if (leaveGameMutation.isIdle) {
-      //   leaveGameMutation.mutate({
-      //     roomName: room,
-      //     playerName
-      //   });
-      // }
+      exitGame(false);
     };
   }, [playerName, exitGame]);
 

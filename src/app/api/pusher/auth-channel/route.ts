@@ -2,8 +2,37 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 
 import { pusherServerClient } from "@server/pusher"
+import { pusherServer } from "@lib/pusher/server"
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
+  const query_params = Object.fromEntries(new URLSearchParams(await req.text()).entries());
+  console.log(query_params)
+  const { channel_name, socket_id } = z
+    .object({ channel_name: z.string(), socket_id: z.string() })
+    .parse(query_params);
+
+  const id = req.headers.get("randomUserId")
+
+  if (!id || typeof id !== 'string') {
+    console.log("no valid user: ", id)
+    return NextResponse.json("lol", { status: 404 })
+  }
+
+  const presenceData = {
+    user_id: id,
+    user_data: { user_id: id },
+  }
+
+  const auth = pusherServer.authorizeChannel(
+    socket_id,
+    channel_name,
+    presenceData
+  )
+
+  return new Response(JSON.stringify(auth))
+}
+
+async function oldPOST(req: NextRequest) {
   const query_params = Object.fromEntries(new URLSearchParams(await req.text()).entries());
   console.log(query_params)
   const { channel_name, socket_id } = z

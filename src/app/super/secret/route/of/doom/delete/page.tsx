@@ -14,7 +14,7 @@ export default function Page() {
 
   useEffect(() => {
     clear.mutate();
-  }, []);
+  }, [clear]);
 
   return <>
   {clear.isLoading

@@ -2,10 +2,9 @@ import { eq } from "drizzle-orm/sql/expressions/conditions";
 import { z } from "zod";
 
 import { TRPCError, experimental_standaloneMiddleware } from "@trpc/server"
-import { createTRPCRouter, createTRPCMiddleware, publicProcedure } from "@server/api/trpc";
+import { createTRPCRouter, publicProcedure } from "@server/api/trpc";
 import { games } from "@server/db/schema";
 import { pusherServerClient } from "@server/pusher";
-// import { PlanetScaleDatabase } from "drizzle-orm/planetscale-serverless"
 import { type TheMindDatabase } from "@server/db"
 
 const UNKOWN_HOST_IP = "UNKOWN_HOST_IP";
@@ -167,7 +166,7 @@ export const gamesRouter = createTRPCRouter({
         console.log(`send update{${playerName} => ${game.room_name}} to ${player}`);
         try {
           await pusherServerClient.trigger(
-            `room-${game.room_name}`,
+            `${game.room_name}`,
             'new-player',
             {playerName, socket_id}
           );

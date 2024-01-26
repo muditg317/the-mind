@@ -1,8 +1,8 @@
-import { Channel, PresenceChannel } from "pusher-js"
+import type { Channel, PresenceChannel } from "pusher-js"
 
-import { useEffect, useRef, useState, useContext, createContext } from "react"
+import { useEffect, useContext, createContext } from "react"
 import Pusher from "pusher-js"
-import { createStore, StoreApi, useStore } from "zustand"
+import { createStore, type StoreApi, useStore } from "zustand"
 import { useShallow } from "zustand/react/shallow"
 import { env } from "@env"
 import useLazyRef from "src/hooks/useLazyRef"
@@ -32,9 +32,9 @@ type ChannelInfo = {
   presenceChannel: PresenceChannel;
   // members: Record<string, MemberInfo>;
 }
-type MemberInfo = {
-  player_name: string;
-}
+// type MemberInfo = {
+//   player_name: string;
+// }
 
 type PusherStoreApi = StoreApi<PusherState>;
 
@@ -68,7 +68,7 @@ function channelIdFromProps(channelProps: ChannelProps): ChannelID {
 const PusherContext = createContext<PusherStoreApi|null>(null);
 
 export function PusherProvider({children, ...initialPusherProps}: React.PropsWithChildren<PusherProps>) {
-  const storeRef = useLazyRef(() => createStore<PusherState>((set, get, state) => ({
+  const storeRef = useLazyRef(() => createStore<PusherState>((set, get, _state) => ({
     // ...pusherProps,
     reconnect: (connectionInitializer: () => Pusher) => {
       console.log(`Reconnect pusher store`);
@@ -138,7 +138,7 @@ export function PusherProvider({children, ...initialPusherProps}: React.PropsWit
 
   useEffect(() => {
     storeRef.current.getState().propsChanged(initialPusherProps);
-  }, [initialPusherProps]);
+  }, [storeRef, initialPusherProps]);
 
   return (
     <PusherContext.Provider value={storeRef.current}>

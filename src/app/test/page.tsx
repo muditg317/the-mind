@@ -52,7 +52,7 @@ export default function Page() {
             <form
                 onSubmit={(e) => {
                     e.preventDefault();
-                    sendMessage(input);
+                    void sendMessage(input);
                 }}
             >
                 <input

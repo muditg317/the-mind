@@ -12,7 +12,7 @@ import { PusherProvider, usePusherChannel, usePusherEventSubscribe, usePusherPre
 
 function GameView_Inner({ room, initialPlayers, playerName }: { room: string, initialPlayers: Record<string,string>, playerName: string }) {
   const router = useRouter();
-  const [playerList, setPlayerList] = useState<Record<string, string>>(initialPlayers);
+  const [playerList, _setPlayerList] = useState<Record<string, string>>(initialPlayers);
 
   const leaveGameMutation = api.games.leaveGame.useMutation()
   const exitGame = useCallback(() => {
@@ -41,9 +41,9 @@ function GameView_Inner({ room, initialPlayers, playerName }: { room: string, in
   }, [playerName, playerList, exitGame]);
 
   const channel = usePusherChannel({ room });
-  const checkIn = api.games.checkIn.useMutation({
-    onSuccess: console.log
-  });
+  // const checkIn = api.games.checkIn.useMutation({
+  //   onSuccess: console.log
+  // });
   console.log(channel);
   // checkIn.mutate({
   //   roomName: room,

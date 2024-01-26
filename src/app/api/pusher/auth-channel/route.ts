@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 
 import { pusherServerClient } from "@server/pusher"
 import { pusherServer } from "@lib/pusher/server"
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   const query_params = Object.fromEntries(new URLSearchParams(await req.text()).entries());
   console.log(query_params)
   const { channel_name, socket_id } = z
@@ -29,10 +29,10 @@ export async function POST(req: Request) {
     presenceData
   )
 
-  return new Response(JSON.stringify(auth))
+  return NextResponse.json(auth);
 }
 
-async function oldPOST(req: NextRequest) {
+async function _oldPOST(req: NextRequest) {
   const query_params = Object.fromEntries(new URLSearchParams(await req.text()).entries());
   console.log(query_params)
   const { channel_name, socket_id } = z

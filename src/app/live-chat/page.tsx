@@ -1,13 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react";
-import type { PresenceChannel } from "pusher-js";
+import { useCallback, useEffect, useState } from "react";
 
 import { api } from "@_trpc/react"
-import { PusherClientProvider, bindPresenceMemberAdded, bindPresenceMemberRemoved, bindPresenceSubscribed, unbindPresenceMemberAdded, unbindPresenceMemberRemoved, unbindPresenceSubscribed, usePusherClient } from "@pusher/react";
+import { PusherClientProvider, usePusherClient } from "@pusher/react";
 import type { MindUser, MindUserId, MindUserPresence } from "@lib/mind";
 import { gameChannelName } from "@lib/mind";
-import { presenceChannelName } from "@pusher/shared";
 import { useMemberTracker } from "@pusher/react/hooks";
 
 const defaultNames = ["Olivia", "Ashleigh", "Emilio", "Ariana", "Belen", "Johnny", "Carolyn", "Lillianna", "Patience", "Lara", "Aniya", "Aleena", "Beau", "Brennen", "Yazmin", "Aubrey", "Luciano", "Kathleen", "Penelope", "Krish", "Kallie", "Branden", "Shirley", "Heidi", "Chaim", "Sydnee", "Trystan", "Madelynn", "Xander", "Marcos", "Hezekiah", "Jimena", "Ruben", "Sarah", "Nataly", "Nick", "Heaven", "Gabriel", "Martin", "Brylee", "Tara", "Randall", "Braelyn", "Adam", "Aisha", "Harrison", "Sylvia", "Jorden", "Jaylee", "Marc", "Reagan", "Ivy", "Lyric", "Memphis", "Alayna", "Reid", "Blaine", "Rubi", "Delilah", "Joel", "Emerson", "Seamus", "Ryan", "Alexandra", "Laila", "Jordyn", "Marvin", "Derrick", "Trey", "Brenda", "Aidyn", "Dwayne", "Jamar", "Trenton", "Yamilet", "Stephany", "Broderick", "Jamarcus", "Renee", "Samson", "Kate", "Edwin", "Averie", "Lilia", "Wade", "Henry", "Molly", "Matteo", "Maurice", "Addison", "Ronald", "Arianna", "Camden", "Tate", "Josiah", "Keely", "Amiya", "Aria", "Garrett", "Atticus"];
@@ -29,7 +27,7 @@ function Content({ playerName, roomName }: MindUser) {
   const [input, setInput] = useState("");
 
   const game_channel_name = gameChannelName(roomName);
-  const members = useMemberTracker<MindUser, MindUserId>(game_channel_name, member => member);
+  const members = useMemberTracker<MindUser, MindUserId>(game_channel_name, useCallback((member: MindUserPresence) => member, []));
 
   const postMessage = api.chat.post.useMutation({
     onSuccess: () => {

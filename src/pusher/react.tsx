@@ -5,7 +5,7 @@ import type { PresenceChannel } from "pusher-js";
 import type { MindUser } from "@lib/mind";
 import useLazyRef from "@hooks/useLazyRef";
 import { env } from "@env";
-import { PresenceFromDataAndId } from "./shared";
+import type { PresenceFromDataAndId } from "./shared";
 
 PusherClient.logToConsole = true;
 PusherClient.log = (message: string) => {

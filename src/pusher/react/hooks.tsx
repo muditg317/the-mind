@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import type { PresenceChannel, Channel } from "pusher-js";
+import type { PresenceChannel } from "pusher-js";
 
-import { PresenceFromDataAndId, presenceChannelName } from "@pusher/shared";
+import { type PresenceFromDataAndId, presenceChannelName } from "@pusher/shared";
 import { bindPresenceMemberAdded, bindPresenceMemberRemoved, bindPresenceSubscribed, unbindPresenceMemberAdded, unbindPresenceMemberRemoved, unbindPresenceSubscribed, usePusherClient } from "@pusher/react";
 import useLazyRef from "@hooks/useLazyRef";
-import { MindUser, MindUserId } from "@lib/mind";
 
 export function usePresenceChannel(base_channel_name: string) {
   const pusherClient = usePusherClient();
@@ -60,7 +59,7 @@ export function useMemberTracker<
       unbindPresenceMemberAdded(presenceChannel, presenceMemAddCb);
       unbindPresenceMemberRemoved(presenceChannel, presenceMemRemoveCb);
     }
-  }, [presenceChannel]);
+  }, [presenceChannel, onMemberLoad]);
 
   return storedMembers;
 }

@@ -5,8 +5,20 @@ import type { PresenceChannel } from "pusher-js";
 import type { MindUser } from "@lib/mind";
 import useLazyRef from "@hooks/useLazyRef";
 import { env } from "@env";
+import { PresenceFromDataAndId } from "./shared";
 
 PusherClient.logToConsole = true;
+PusherClient.log = (message: string) => {
+  if (typeof message !== "string") {
+    console.log(message);
+    return
+  }
+  if (message.includes("Error")) {
+    const err = new Error();
+    console.log(message, "<-- had error");
+    console.error(err.stack, "<-- the stack");
+  }
+}
 const PusherClientContext = createContext<PusherClient|undefined>(undefined);
 
 interface PusherClientProviderProps {
@@ -14,6 +26,8 @@ interface PusherClientProviderProps {
 }
 export function PusherClientProvider({ mindUser, children }: React.PropsWithChildren<PusherClientProviderProps>) {
   const storeRef = useLazyRef(() => {
+    // const mu_json = JSON.stringify(mindUser);
+    // console.log("create boi with mind user: ", mu_json);
     const pusherClient = new PusherClient(env.NEXT_PUBLIC_PUSHER_KEY, {
       cluster: env.NEXT_PUBLIC_PUSHER_CLUSTER,
       channelAuthorization: {
@@ -27,9 +41,10 @@ export function PusherClientProvider({ mindUser, children }: React.PropsWithChil
         params: { ...mindUser },
       }
     });
-
+    
     pusherClient.signin();
-
+    
+    typeof window !== "undefined" && console.log(pusherClient);
     return pusherClient;
   });
 
@@ -48,7 +63,7 @@ export const usePusherClient = () => {
 
 
 
-type PresenceSubscriptionSucceededCallbackData<UserData, UserId extends string, PresenceData=UserData&{user_id:UserId}> = {
+type PresenceSubscribedCbData<UserData, UserId extends string, PresenceData extends PresenceFromDataAndId<UserData, UserId>> = {
   members: Record<UserId, PresenceData>;
   count: number;
   myID: UserId;
@@ -57,48 +72,78 @@ type PresenceSubscriptionSucceededCallbackData<UserData, UserId extends string, 
     info: PresenceData
   };
 }
-export function bindPresenceSubscribed<UserData, UserId extends string = string>(presenceChannel: PresenceChannel, callback: (data: PresenceSubscriptionSucceededCallbackData<UserData, UserId>) => void) {
+export function bindPresenceSubscribed<
+    UserData,
+    UserId extends string = string,
+    PresenceData extends PresenceFromDataAndId<UserData, UserId> = PresenceFromDataAndId<UserData, UserId>
+  >(
+  presenceChannel: PresenceChannel,
+  callback: (data: PresenceSubscribedCbData<UserData, UserId, PresenceData>) => void
+) {
   presenceChannel.bind('pusher:subscription_succeeded', callback);
   return callback;
 }
-export function unbindPresenceSubscribed<UserData, UserId extends string = string>(presenceChannel: PresenceChannel, callback: (data: PresenceSubscriptionSucceededCallbackData<UserData, UserId>) => void) {
+export function unbindPresenceSubscribed<
+    UserData,
+    UserId extends string = string,
+    PresenceData extends PresenceFromDataAndId<UserData, UserId> = PresenceFromDataAndId<UserData, UserId>
+  >(
+  presenceChannel: PresenceChannel,
+  callback: (data: PresenceSubscribedCbData<UserData, UserId, PresenceData>) => void
+) {
   presenceChannel.unbind('pusher:subscription_succeeded', callback);
 }
 
 
-type PresenceMemberAddedCallbackData<UserData, UserId extends string, PresenceData=UserData&{user_id:UserId}> = {
-  // event:"pusher:member_added";
-  // channel: `presence-${string}`
-  // data: {
-  //   user_id: UserId;
-  //   user_info: PresenceData
-  // }
+type PresenceMemberAddedCbData<UserData, UserId extends string, PresenceData extends PresenceFromDataAndId<UserData, UserId>> = {
   id: UserId;
   info: PresenceData;
 };
-export function bindPresenceMemberAdded<UserData, UserId extends string = string>(presenceChannel: PresenceChannel, callback: (data: PresenceMemberAddedCallbackData<UserData, UserId>) => void) {
+export function bindPresenceMemberAdded<
+    UserData,
+    UserId extends string = string,
+    PresenceData extends PresenceFromDataAndId<UserData, UserId> = PresenceFromDataAndId<UserData, UserId>
+  >(
+  presenceChannel: PresenceChannel,
+  callback: (data: PresenceMemberAddedCbData<UserData, UserId, PresenceData>) => void
+) {
   presenceChannel.bind('pusher:member_added', callback);
   return callback;
 }
-export function unbindPresenceMemberAdded<UserData, UserId extends string = string>(presenceChannel: PresenceChannel, callback: (data: PresenceMemberAddedCallbackData<UserData, UserId>) => void) {
+export function unbindPresenceMemberAdded<
+    UserData,
+    UserId extends string = string,
+    PresenceData extends PresenceFromDataAndId<UserData, UserId> = PresenceFromDataAndId<UserData, UserId>
+  >(
+  presenceChannel: PresenceChannel,
+  callback: (data: PresenceMemberAddedCbData<UserData, UserId, PresenceData>) => void
+) {
   presenceChannel.unbind('pusher:member_added', callback);
 }
 
 
-type PresenceMemberRemovedCallbackData<UserData, UserId extends string, PresenceData=UserData&{user_id:UserId}> = {
-  // event:"pusher:member_removed";
-  // channel: `presence-${string}`
-  // data: {
-  //   user_id: UserId;
-  //   user_info: PresenceData
-  // }
+type PresenceMemberRemovedCbData<UserData, UserId extends string, PresenceData extends PresenceFromDataAndId<UserData, UserId>> = {
   id: UserId;
   info: PresenceData;
 };
-export function bindPresenceMemberRemoved<UserData, UserId extends string = string>(presenceChannel: PresenceChannel, callback: (data: PresenceMemberRemovedCallbackData<UserData, UserId>) => void) {
+export function bindPresenceMemberRemoved<
+    UserData,
+    UserId extends string = string,
+    PresenceData extends PresenceFromDataAndId<UserData, UserId> = PresenceFromDataAndId<UserData, UserId>
+  >(
+  presenceChannel: PresenceChannel,
+  callback: (data: PresenceMemberRemovedCbData<UserData, UserId, PresenceData>) => void
+) {
   presenceChannel.bind('pusher:member_removed', callback);
   return callback;
 }
-export function unbindPresenceMemberRemoved<UserData, UserId extends string = string>(presenceChannel: PresenceChannel, callback: (data: PresenceMemberRemovedCallbackData<UserData, UserId>) => void) {
+export function unbindPresenceMemberRemoved<
+    UserData,
+    UserId extends string = string,
+    PresenceData extends PresenceFromDataAndId<UserData, UserId> = PresenceFromDataAndId<UserData, UserId>
+  >(
+  presenceChannel: PresenceChannel,
+  callback: (data: PresenceMemberRemovedCbData<UserData, UserId, PresenceData>) => void
+) {
   presenceChannel.unbind('pusher:member_removed', callback);
 }

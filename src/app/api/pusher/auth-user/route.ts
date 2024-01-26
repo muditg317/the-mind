@@ -20,6 +20,7 @@ export async function POST(req: NextRequest) {
     .map(user => user.id)
     .filter(other_id => other_id !== id);
 
+  console.log(`Beginning auth for user ${playerName} (socket ${socket_id}) in ${roomName}`)
   const auth = pusherServer.authenticateUser(socket_id, {
     id,
     user_info: {
@@ -31,5 +32,5 @@ export async function POST(req: NextRequest) {
   })
   console.log(`Authorized user ${playerName} (socket ${socket_id}) in ${roomName}`)
   console.log(`current users in ${roomName}: `, room_user_ids);
-  return NextResponse.json(auth);
+  return NextResponse.json(auth, { status: 200 });
 }

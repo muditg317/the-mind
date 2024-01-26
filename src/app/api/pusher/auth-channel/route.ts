@@ -13,13 +13,6 @@ export async function POST(req: NextRequest) {
     .merge(mindUserZod)
     .parse(query_params);
 
-  if (!playerName || typeof playerName !== 'string') {
-    console.log(`Provided playerName not valid: ${playerName}`);
-    return NextResponse.json({
-      "error": `Provided playerName not valid: ${playerName}`,
-    }, { status: 404 });
-  }
-
   const user_id = userId({roomName, playerName});
 
   const auth = pusherServer.authorizeChannel(socket_id, channel_name, {

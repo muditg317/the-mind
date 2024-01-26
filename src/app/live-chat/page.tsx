@@ -98,7 +98,7 @@ function Content({ playerName, roomName }: MindUser) {
     <div className="mt-10 flex flex-col">
     <h2>Members:</h2>
       {members.map((member, i) => (
-        <p key={i}>{member.playerName}</p>
+        <p key={i}>{`${member.playerName}${member.playerName === playerName ? " (you)" : ""}`}</p>
       ))}
     </div>
   </>)

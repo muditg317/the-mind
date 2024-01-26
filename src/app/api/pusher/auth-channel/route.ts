@@ -15,6 +15,7 @@ export async function POST(req: NextRequest) {
 
   const user_id = userId({roomName, playerName});
 
+  console.log(`Begin auth on ${channel_name} channel for ${playerName} (socket ${socket_id}) in room ${roomName}`)
   const auth = pusherServer.authorizeChannel(socket_id, channel_name, {
     user_id,
     user_info: {

@@ -3,29 +3,21 @@
 import { pusherClient } from "@lib/pusher/client";
 import { useEffect, useState } from "react";
 
+import { api } from "@_trpc/react"
+
 export default function Page() {
     const roomId = "bruh";
     const [incomingMessages, setIncomingMessages] = useState<string[]>([])
     const [input, setInput] = useState("");
 
+    const postMessage = api.games.post.useMutation({
+        onSuccess: () => {
+            setInput("");
+        }
+    });
+
     const sendMessage = async (text: string) => {
-        await fetch("/api/pusher/post", {
-            method: "POST", // *GET, POST, PUT, DELETE, etc.
-            mode: "cors", // no-cors, *cors, same-origin
-            cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
-            credentials: "same-origin", // include, *same-origin, omit
-            headers: {
-              "Content-Type": "application/json",
-              // 'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            redirect: "follow", // manual, *follow, error
-            referrerPolicy: "no-referrer", // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
-            body: JSON.stringify({
-                text,
-                roomId
-            }), // body data type must match "Content-Type" header
-        });
-        setInput("");
+        postMessage.mutate({ text, roomId });
     }
 
     useEffect(() => {

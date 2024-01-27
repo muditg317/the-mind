@@ -47,26 +47,6 @@ function Content({ playerName, roomName }: MindUser) {
     return inactive;
   }, [activePlayers, allPlayers]);
 
-  // useMutationOnSubscribe(game_channel_name, api.room.checkIn.useMutation({
-  //   onSuccess: ({ playerNames, isHost: isGameHost }) => {
-  //     console.log("sent checkin -- got players:", playerNames);
-  //     setAllPlayers(playerNames.map(name => ({
-  //       user_id: userId({roomName, playerName: name}),
-  //       roomName,
-  //       playerName: name
-  //     })));
-  //     setIsHost(isGameHost);
-  //   },
-  //   onError: (error) => {
-  //     const code = error.data?.code;
-  //     if (code === "UNAUTHORIZED" || code === "BAD_REQUEST") {
-  //       router.replace("/");
-  //     }
-  //   }
-  // }), {
-  //   playerName,
-  //   roomName
-  // });
   const playerInfoQuery = api.room.playerInfo.useQuery({
     roomName,
     playerName

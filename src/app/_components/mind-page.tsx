@@ -65,7 +65,7 @@ function Content({ playerName, roomName }: MindUser) {
     playerName
   });
 
-  useEffect(async () => {
+  useEffect(() => {
     if (playerInfoQuery.isSuccess) {
       setAllPlayers(playerInfoQuery.data.playerNames.map(name => ({
         user_id: userId({roomName, playerName: name}),
@@ -73,7 +73,7 @@ function Content({ playerName, roomName }: MindUser) {
         playerName: name
       })));
     }
-    await playerInfoQuery.refetch();
+    void playerInfoQuery.refetch();
   }, [activePlayers]);
 
 

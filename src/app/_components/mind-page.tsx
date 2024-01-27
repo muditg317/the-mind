@@ -1,13 +1,11 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { api } from "@_trpc/react"
 import { PusherClientProvider } from "@pusher/react";
-import type { MindPublicGameState, MindUser, MindUserId, MindUserPresence } from "@lib/mind";
-import { arrayContainsMatchingPlayer, gameChannelName, userId } from "@lib/mind";
-import { useMemberTracker } from "@pusher/react/hooks";
+import type { MindPublicGameState, MindUser, MindUserPresence } from "@lib/mind";
+import { userId } from "@lib/mind";
 import MindHostFragment from "./mind-host";
 import { useGamePlayerTracker } from "@lib/mindHooks";
 
@@ -38,7 +36,7 @@ function Content(mindUser: MindUser) {
   const { playerName, roomName } = mindUser;
   const user_id = userId(mindUser);
   const {
-    allPlayers: _allPlayers,
+    // allPlayers,
     activePlayers,
     inactivePlayers,
     imposterPlayers,

@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { createTRPCRouter, publicProcedure } from "@server/api/trpc";
 import { getGameMiddleware } from "../middleware/games";
-import { type MindUserId, mindUserZod, userId, MindPublicGameState } from "@lib/mind";
+import { type MindUserId, mindUserZod, userId, type MindPublicGameState } from "@lib/mind";
 import { TRPCError } from "@trpc/server";
 import { UNKNOWN_HOST_IP } from "@lib/utils";
 import { games } from "@server/db/schema";
@@ -64,16 +64,16 @@ export const roomRouter = createTRPCRouter({
           cardsLeft: otherPlayer.cards.length,
         };
         if (otherPlayerId === playerId) { // requesting player
-          playerState[otherPlayerId as MindUserId]!.cards = otherPlayer.cards;
+          playerState[otherPlayerId]!.cards = otherPlayer.cards;
         }
       }
 
-      console.log("the state", {
-        started: game.started!,
-        level: game.level!,
-        played_cards: game.played_cards!,
-        playerState
-      });
+      // console.log("the state", {
+      //   started: game.started!,
+      //   level: game.level!,
+      //   played_cards: game.played_cards!,
+      //   playerState
+      // });
 
       return {
         started: game.started!,

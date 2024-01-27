@@ -1,7 +1,7 @@
 // Example model schema from the Drizzle docs
 // https://orm.drizzle.team/docs/sql-schema-declaration
 
-import { MindUserGameState, type MindUser, type MindUserId } from "@lib/mind";
+import type { MindUserGameState, MindUser, MindUserId } from "@lib/mind";
 import { sql } from "drizzle-orm";
 import {
   bigint,

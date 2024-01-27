@@ -1,7 +1,7 @@
 "use client"
 
 import { api } from "@_trpc/react";
-import { MindUserId, type MindUserPresence } from "@lib/mind";
+import type { MindUserId, MindUserPresence } from "@lib/mind";
 
 interface MindHostFragmentProps {
   mindUser: MindUserPresence

@@ -75,45 +75,6 @@ export const gamesRouter = createTRPCRouter({
       };
     }),
 
-  // leaveGame: publicProcedure
-  //   .input(z.object({ roomName: z.string().min(3), playerName: z.string().min(3) }))
-  //   .use(getGameMiddleware({
-  //     id: true,
-  //     room_name: true,
-  //     player_list: true
-  //   }))
-  //   .mutation(async ({ ctx: { game, db }, input: { roomName, playerName } }) => {
-  //     const playerId = userId({roomName: game.room_name, playerName});
-
-  //     if (!game) throw new TRPCError({
-  //       code: "BAD_REQUEST",
-  //       message: `There is no active room: ${roomName}`,
-  //     });
-  //     if (!(playerId in game.player_list) || !game.player_list[playerId]) throw new TRPCError({
-  //       code: "UNAUTHORIZED",
-  //       message: `Player ${playerName} is not in the room!`
-  //     })
-
-  //     delete game.player_list[playerId];
-
-  //     // console.log(`${playerName} left room ${game.room_name}`)
-  //     // const anyActive = Object.values(game.player_list).reduce((any, player) => any || player.checkedIn, false);
-  //     const anyActive = Object.values(game.player_list).some(player => player.checkedIn);
-  //     if (anyActive) {
-  //       await db.update(games)
-  //         .set(game)
-  //         .where(eq(games.room_name, game.room_name))
-  //         .execute()
-  //     } else { // all players gone!
-  //       console.log(`room ${game.room_name} closed`)
-  //       await db.delete(games)
-  //         .where(eq(games.room_name, game.room_name))
-  //         .execute()
-  //     }
-      
-  //     return true;
-  //   }),
-
   players: publicProcedure
     .input(z.object({ roomName: z.string() }))
     .use(getGameMiddleware({

@@ -1,7 +1,6 @@
 import { api } from "@_trpc/server";
 
 import dynamic from 'next/dynamic'
-// import { MindPage } from "@components/mind-page"
 import { redirect } from "next/navigation";
 
 const MindPageNoSSR = dynamic(() => import('@components/mind-page'), { ssr: false })

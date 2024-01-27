@@ -6,3 +6,5 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export type EmptyObj = Record<PropertyKey, never>;
+
+export const UNKNOWN_HOST_IP = "UNKOWN_HOST_IP" as const;

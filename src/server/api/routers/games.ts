@@ -6,20 +6,19 @@ import { createTRPCRouter, publicProcedure } from "@server/api/trpc";
 import { games } from "@server/db/schema";
 import { getGameMiddleware } from "../middleware/games";
 import { userId } from "@lib/mind";
-
-const UNKOWN_HOST_IP = "UNKOWN_HOST_IP";
+import { UNKNOWN_HOST_IP } from "@lib/utils";
 
 
 export const gamesRouter = createTRPCRouter({
   create: publicProcedure
     .input(z.object({ roomName: z.string().min(3), hostName: z.string().min(3) }))
     .mutation(async ({ ctx, input: {roomName, hostName} }) => {
-      const remote_addr = ctx.headers.get('x-forwarded-for') ?? UNKOWN_HOST_IP;
+      const remoteAddr = ctx.headers.get('x-forwarded-for') ?? UNKNOWN_HOST_IP;
       const playerId = userId({ roomName, playerName: hostName });
 
       await ctx.db.insert(games).values({
         room_name: roomName,
-        host_ip: remote_addr,
+        host_ip: remoteAddr,
         host_name: hostName,
         player_list: {[playerId]: {
           roomName,
@@ -33,6 +32,7 @@ export const gamesRouter = createTRPCRouter({
   getOpenRooms: publicProcedure.query(({ ctx }) => {
     return ctx.db.query.games.findMany({
       orderBy: (games, { desc }) => [desc(games.updatedAt)],
+      where: ({ locked }, { eq, not }) => not(eq(locked, true)),
       columns: {
         room_name: true
       }
@@ -65,8 +65,7 @@ export const gamesRouter = createTRPCRouter({
       await db.update(games)
         .set(game)
         .where(eq(games.room_name, game.room_name))
-        .execute()
-      console.log(`Updated db for ${playerName} => ${game.room_name}`);
+        .execute();
 
       console.log(`${playerName} joined ${game.room_name} room`)
       return {

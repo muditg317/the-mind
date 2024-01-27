@@ -2,9 +2,9 @@ import { TRPCError, experimental_standaloneMiddleware } from "@trpc/server"
 import { type TheMindDatabase } from "@server/db"
 
 type GamesColumnQuery = Partial<Record<keyof NonNullable<TheMindDatabase["_"]["schema"]>["games"]["columns"], boolean>>
-export function getGameMiddleware<Cols extends GamesColumnQuery>(columns: Cols) {
+export function getGameMiddleware<ExtraCtx=Record<string,never>, Cols extends GamesColumnQuery = GamesColumnQuery>(columns: Cols) {
   return experimental_standaloneMiddleware<{
-    ctx: { db: TheMindDatabase }
+    ctx: { db: TheMindDatabase } & ExtraCtx,
     input: { roomName: string }
   }>().create(async ({ ctx: { db }, input: { roomName }, next }) => {
     // const remote_addr = ctx.headers.get('x-forwarded-for') ?? UNKOWN_HOST_IP;
@@ -29,3 +29,4 @@ export function getGameMiddleware<Cols extends GamesColumnQuery>(columns: Cols) 
     });
   })
 }
+

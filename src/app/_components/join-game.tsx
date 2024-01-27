@@ -24,6 +24,15 @@ interface JoinGameProps {
 export function JoinGame({ existingRooms }: JoinGameProps) {
   const router = useRouter();
   const [playerName, setPlayerName] = useState("");
+  const availableRooms = api.games.getOpenRooms.useQuery(undefined, {
+    initialData: existingRooms,
+    keepPreviousData: true,
+    staleTime: 1000,
+    refetchInterval: 1000,
+    refetchOnMount: 'always',
+    refetchOnReconnect: 'always',
+    refetchOnWindowFocus: 'always',
+  });
   const attemptJoin = api.games.attemptJoin.useMutation({
     onSuccess: ({roomName,playerName}) => {
       localStorage.setItem("playerName", playerName);
@@ -31,12 +40,10 @@ export function JoinGame({ existingRooms }: JoinGameProps) {
     }
   });
 
-  // useEffect(() => {
-  //   !playerName && setPlayerName(localStorage)
-  // }, [])
+  const openRooms = availableRooms.data;
 
   return (<>
-    <h2 className="text-2xl mb-6">Join a game! (tap any room to join)</h2>
+    <h2 className="mb-6 text-2xl">Join a game! (tap any room to join)</h2>
     <div
       className="flex flex-col gap-2"
     >
@@ -45,12 +52,12 @@ export function JoinGame({ existingRooms }: JoinGameProps) {
         placeholder="Your name"
         value={playerName}
         onChange={(e) => setPlayerName(e.target.value)}
-        className="w-full rounded-full px-4 py-2 text-black"
+        className="w-full px-4 py-2 text-black rounded-full"
       />
-      {!!existingRooms && existingRooms.length
-      ? existingRooms.map(room => <React.Fragment key={room}>
+      {!!openRooms && openRooms.length
+      ? openRooms.map(room => <React.Fragment key={room}>
           <button
-            className="rounded-full bg-white/10 px-10 py-3 font-semibold transition hover:bg-white/20"
+            className="px-10 py-3 font-semibold transition rounded-full bg-white/10 hover:bg-white/20"
             disabled={attemptJoin.isLoading}
             onClick={() => {
               if (playerName) {
@@ -61,7 +68,7 @@ export function JoinGame({ existingRooms }: JoinGameProps) {
               }
             }}
           >
-            {attemptJoin.isLoading ? "Attempting to join..." : `Join ${room}!`}
+            {(attemptJoin.isLoading && attemptJoin.variables?.roomName === room) ? "Attempting to join..." : `Join ${room}!`}
           </button>
         </React.Fragment>)
       : <p>No active games... Create one below!</p>}

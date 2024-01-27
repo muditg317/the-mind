@@ -73,7 +73,7 @@ function Content({ playerName, roomName }: MindUser) {
         playerName: name
       })));
     }
-    playerInfoQuery.refetch();
+    await playerInfoQuery.refetch();
   }, [activePlayers]);
 
 
@@ -89,7 +89,7 @@ function Content({ playerName, roomName }: MindUser) {
       ))}
     </div>
     {isHost && <>
-    <div className="mt-10">You're the host!</div>
+    <div className="mt-10">You are the host!</div>
     </>}
   </>)
 }

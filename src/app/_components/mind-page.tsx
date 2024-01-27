@@ -65,7 +65,7 @@ function Content({ playerName, roomName }: MindUser) {
     playerName
   });
 
-  useEffect(() => {
+  useEffect(async () => {
     if (playerInfoQuery.isSuccess) {
       setAllPlayers(playerInfoQuery.data.playerNames.map(name => ({
         user_id: userId({roomName, playerName: name}),

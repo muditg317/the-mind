@@ -5,7 +5,7 @@ import { TRPCError } from "@trpc/server"
 import { createTRPCRouter, publicProcedure } from "@server/api/trpc";
 import { games } from "@server/db/schema";
 import { getGameMiddleware } from "../middleware/games";
-import { userId } from "@lib/mind";
+import { defaultPlayerState, userId } from "@lib/mind";
 import { UNKNOWN_HOST_IP } from "@lib/utils";
 
 
@@ -23,7 +23,7 @@ export const gamesRouter = createTRPCRouter({
         player_list: {[playerId]: {
           roomName,
           playerName: hostName,
-          checkedIn:false
+          ...defaultPlayerState()
         }},
       });
       console.log(`created ${roomName} room hosted by ${hostName}`);
@@ -58,7 +58,7 @@ export const gamesRouter = createTRPCRouter({
       const player = game.player_list[playerId] = game.player_list[playerId] ?? {
         roomName: game.room_name,
         playerName,
-        checkedIn: false
+        ...defaultPlayerState()
       };
       player.checkedIn = false;
 

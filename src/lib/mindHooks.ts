@@ -14,7 +14,7 @@ export function useGamePlayerTracker({roomName, playerName}: MindUserPresence) {
 
   const inChannelPlayers = useMemberTracker<MindUser, MindUserId>(game_channel_name, useCallback((member: MindUserPresence) => member, []));
   const [allPlayers, setAllPlayers] = useState<MindUserPresence[]>([]);
-  const [isHost, setIsHost] = useState(false);
+  const [hostName, setHostName] = useState<string>();
   const inactivePlayers = useMemo(() => {
     const inactive = allPlayers
       .filter(
@@ -41,7 +41,7 @@ export function useGamePlayerTracker({roomName, playerName}: MindUserPresence) {
         roomName,
         playerName: name
       })));
-      setIsHost(playerInfoQuery.data.hostName === playerName);
+      setHostName(playerInfoQuery.data.hostName);
     }
   }, [router, playerName, roomName, playerInfoQuery.isError, playerInfoQuery.error, playerInfoQuery.isSuccess, playerInfoQuery.data]);
 
@@ -50,6 +50,7 @@ export function useGamePlayerTracker({roomName, playerName}: MindUserPresence) {
   }, [inChannelPlayers, playerInfoQuery]);
 
   const currentPlayer = inChannelPlayers.find(player => player.user_id === userId({roomName, playerName}));
+  const hostPlayer = inChannelPlayers.find(player => player.user_id === userId({roomName, playerName: hostName}));
 
   const [activePlayers, imposterPlayers] = useMemo(() => {
     const filtered: MindUserPresence[] = [];
@@ -74,6 +75,6 @@ export function useGamePlayerTracker({roomName, playerName}: MindUserPresence) {
     inactivePlayers,
     imposterPlayers,
     currentPlayer,
-    isHost
+    hostPlayer
   }
 }

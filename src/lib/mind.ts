@@ -12,6 +12,30 @@ export type MindUserPresence = MindUser & {
   user_id: MindUserId;
 }
 
+export type MindPublicGameState = {
+  started: boolean;
+  level: number;
+  played_cards: number[];
+  playerState: Record<`,.-.,mind-player,.-.,room-${string},.-.,name-${string},.-.,`, {
+      ready: boolean;
+      cardsLeft: number;
+      cards?: number[]; // only filled in for current player
+  }>;
+}
+
+export type MindUserGameState = {
+  checkedIn: boolean;
+  ready: boolean;
+  cards: number[]
+}
+export function defaultPlayerState(): MindUserGameState {
+  return {
+    checkedIn: false,
+    ready: false,
+    cards: []
+  };
+}
+
 
 export function gameChannelName(roomName: string) {
   return `room-${roomName}-game`;

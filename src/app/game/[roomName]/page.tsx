@@ -8,16 +8,9 @@ const MindPageNoSSR = dynamic(() => import('@components/mind-page'), { ssr: fals
 
 export default async function Page({ params }: {params:{roomName:string}}) {
   const roomName = params.roomName;
-  // let players: Record<string, boolean>;
-  // try {
-  //   players = await api.games.players.query({
-  //     roomNameName: roomName
-  //   });
-  //   // console.log("game has the following players", players);
-  // } catch (_) {
-  //   // console.log("failed to fetch players");
-  //   redirect("/");
-  // }
+
+  const isValidGame = (await api.games.getOpenRooms.query()).some(room => room === roomName);
+  if (!isValidGame) redirect("/");
 
   return <MindPageNoSSR mindUserInfo={{
     roomName,

@@ -1,7 +1,7 @@
 // Example model schema from the Drizzle docs
 // https://orm.drizzle.team/docs/sql-schema-declaration
 
-import { MindUser, MindUserId } from "@lib/mind";
+import { type MindUser, type MindUserId } from "@lib/mind";
 import { sql } from "drizzle-orm";
 import {
   bigint,
@@ -10,6 +10,7 @@ import {
   timestamp,
   varchar,
   json,
+  boolean,
 } from "drizzle-orm/mysql-core";
 
 /**
@@ -28,6 +29,7 @@ export const games = createTable(
     host_ip: varchar("host_ip", { length: 256 }).notNull(),
     host_name: varchar("host_name", { length: 50 }).notNull(),
     player_list: json("player_list").$type<Record<MindUserId,MindUser&{checkedIn:boolean}>>().notNull(),
+    locked: boolean("locked").default(false),
     createdAt: timestamp("created_at")
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),

@@ -5,8 +5,8 @@ import { type PresenceFromDataAndId, presenceChannelName } from "@pusher/shared"
 import { bindPresenceMemberAdded, bindPresenceMemberRemoved, bindPresenceSubscribed, unbindPresenceMemberAdded, unbindPresenceMemberRemoved, unbindPresenceSubscribed, usePusherClient } from "@pusher/react";
 import useLazyRef from "@hooks/useLazyRef";
 import {  } from "@trpc/react-query/shared";
-import { UseMutationResult } from "@tanstack/react-query";
-import { EmptyObj } from "@lib/utils";
+import { type UseMutationResult } from "@tanstack/react-query";
+import { type EmptyObj } from "@lib/utils";
 
 export function useChannel(channel_name: string) {
   const pusherClient = usePusherClient();
@@ -89,5 +89,5 @@ export function useMutationOnSubscribe<TData, TError, TVariables, TContext>(base
       // unbindPresenceMemberRemoved(channel, presenceMemRemoveCb);
       channel.unbind("pusher:subscription_succeeded", callback);
     }
-  }, [channel]);
+  }, [channel, mutation, mutationData]);
 }

@@ -1,26 +1,10 @@
-"use client"
-import { useRouter } from "next/navigation";
+import { redirect } from "next/navigation";
 
-import { api } from "@_trpc/react";
-import { useEffect } from "react";
+import { api } from "@_trpc/server";
 
-export default function Page() {
-  const router = useRouter();
-  const clear = api.games.clear.useMutation({
-    onSuccess: () => {
-      router.replace("/");
-    }
-  });
-
-  useEffect(() => {
-    clear.mutate();
-  }, [clear]);
-
-  return <>
-  {clear.isLoading
-    ? <p>deleting everything!</p>
-    : <p>byebye</p>}
-  </>
+export default async function Page() {
+  await api.games.clear.mutate();
+  redirect("/");
 }
 
 

@@ -32,9 +32,13 @@ export async function getGameStateUpdate(roomName: string, playerId: MindUserId)
   let anyUpdates = false;
   for (const otherPlayerId in game.player_list) {
     const otherPlayer = game.player_list[otherPlayerId as MindUserId]!;
-    if (!activeUsers.find(active => active.id === otherPlayerId)) {
+    const userActive = !!activeUsers.find(active => active.id === otherPlayerId);
+    if (!userActive) {
       otherPlayer.checkedIn = false;
       otherPlayer.ready = false;
+      anyUpdates = true;
+    } else if (!otherPlayer.checkedIn) {
+      otherPlayer.checkedIn = true;
       anyUpdates = true;
     }
   }

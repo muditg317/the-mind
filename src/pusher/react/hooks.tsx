@@ -117,9 +117,12 @@ export function useEventSubscriptionReducer<
     });
 
     return () => {
-      channels.forEach(channel => channel.unbind(eventName, callback));
+      channels.forEach(channel => {
+        console.log("unsubscribed from ", channel, `event ${eventName} for game updates`);
+        channel.unbind(eventName, callback)
+      });
     }
-  }, [eventName, dispatch]);
+  }, [eventName, dispatch, ...channels]);
 
   return state;
 }

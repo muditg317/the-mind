@@ -29,6 +29,8 @@ export default function MindHostFragment({ hostPlayer: mindUser, gameState }: Mi
       gameState.playerState
     ).every(player => player.ready);
 
+  // TODO: if host - add kick buttons
+
   return (<>
     <h2 className="text-2xl w-max">Host Controls:</h2>
     {locked.isSuccess && <button

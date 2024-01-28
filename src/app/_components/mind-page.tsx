@@ -52,49 +52,9 @@ function Content(mindUser: MindUser) {
     && currentPlayer.user_id === hostPlayer.user_id
   );
 
-  // const connection = usePusherClient().connection;
-  // const registerSocketId = api.room.registerSocketId.useMutation({
-  //   // retry: (failureCount) => failureCount < 10,
-  //   onSuccess: (_data, variables) => {
-  //     const sent = {...variables} as Partial<typeof variables>;
-  //     delete sent.roomName;
-  //     delete sent.playerName;
-  //     console.log("Updated socketId with server!", sent);
-  //   },
-  //   onMutate: variables => {
-  //     console.log("updating socketid", variables);
-  //   },
-  //   trpc: {
-  //     abortOnUnmount: true
-  //   }
-  // });
-  // useEffect(() => {
-  //   const callback = () => {
-  //     const socketId = connection.socket_id;
-  //     registerSocketId.mutate({
-  //       ...mindUser,
-  //       socketId,
-  //     });
-  //   };
-
-  //   connection.bind("connected", callback);
-
-  //   return () => {
-  //     if (registerSocketId.isSuccess && "socketId" in registerSocketId.variables!) {
-  //       registerSocketId.mutate({
-  //         ...mindUser,
-  //         removeId: registerSocketId.variables!.socketId,
-  //       });
-  //     }
-  //     connection.unbind("connection", callback);
-  //   }
-  // }, []);
+  api.room.pingForUpdate.useQuery(mindUser);
 
   const gameState = useGameStateReducer(mindUser);
-  // console.log("rerendering with state", gameState);
-  // console.log("rerendering with curr", currentPlayer);
-
-  // TODO: if host - add kick buttons
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#bae5ff] to-[#343aae] text-white">
@@ -145,16 +105,16 @@ function Content(mindUser: MindUser) {
 
 interface GameFragmentProps {
   currentPlayer: MindUserPresence;
-  playerInfo?: NonNullable<MindLocalGameState["playerInfo"]>;
+  playerInfo: NonNullable<MindLocalGameState["playerInfo"]>;
   gameState: NonNullable<MindLocalGameState["gameState"]>;
   isHost: boolean;
 }
 function GameFragment({currentPlayer, playerInfo, gameState, isHost}: GameFragmentProps) {
   const toggleReady = api.room.toggleReady.useMutation({});
-  console.log("render game fragment", {currentPlayer, playerInfo, gameState, isHost});
+  // console.log("render game fragment", {currentPlayer, playerInfo, gameState, isHost});
   
-  const playerReady = playerInfo?.ready ?? false;
-  console.log("ready", playerReady);
+  const playerReady = playerInfo.ready ?? false;
+  // console.log("ready", playerReady);
 
   return (<>
     {isHost

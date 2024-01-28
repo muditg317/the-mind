@@ -38,7 +38,7 @@ export function useGamePlayerTracker({roomName, playerName}: MindUserPresence) {
       }
     }
     if (playerInfoQuery.isSuccess) {
-      console.log("got players:", playerInfoQuery.data.playerNames);
+      // console.log("got players:", playerInfoQuery.data.playerNames);
       setAllPlayers(playerInfoQuery.data.playerNames.map(name => ({
         user_id: userId({roomName, playerName: name}),
         roomName,
@@ -84,9 +84,9 @@ export function useGamePlayerTracker({roomName, playerName}: MindUserPresence) {
 
 function gameStateReducer(prevState: MindLocalGameState, action: MindGameStateUpdate) {
   // const newState = {...prevState};
-  console.log("got game update", action);
+  // console.log("got game update", action);
   const logFirst = <T>(obj: T) => {
-    console.log(obj);
+    // console.log(obj);
     return obj;
   }
   switch (action.type) {

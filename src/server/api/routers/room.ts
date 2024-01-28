@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { createTRPCRouter, publicProcedure } from "@server/api/trpc";
 import { getGameMiddleware } from "../middleware/games";
-import { type MindUserId, mindUserZod, userId, GAME_COMPLETED_DELAY_MS_SEND_UPDATE } from "@lib/mind";
+import { type MindUserId, mindUserZod, userId } from "@lib/mind";
 import { TRPCError } from "@trpc/server";
 import { UNKNOWN_HOST_IP } from "@lib/utils";
 import { games } from "@server/db/schema";
@@ -183,6 +183,7 @@ export const roomRouter = createTRPCRouter({
           const card = deck.splice(Math.floor(Math.random()*deck.length), 1)[0]!;
           player.cards.push(card);
         }
+        player.cards.sort();
       }
 
       await db.update(games)
@@ -241,8 +242,9 @@ export const roomRouter = createTRPCRouter({
       const overStr = won ? "won" : "lost";
 
       if (over) {
-        console.log(`Room ${game.room_name} ${overStr} the game! Waiting ${GAME_COMPLETED_DELAY_MS_SEND_UPDATE/1000}s to send result...`);
-        await new Promise((resolve) => setTimeout(resolve, GAME_COMPLETED_DELAY_MS_SEND_UPDATE));
+        console.log(`Room ${game.room_name} ${overStr} the game!`);
+        // console.log(`Waiting ${GAME_COMPLETED_DELAY_MS_SEND_UPDATE/1000}s to send result...`);
+        // await new Promise((resolve) => setTimeout(resolve, GAME_COMPLETED_DELAY_MS_SEND_UPDATE));
         game.started = false;
         if (won) {
           game.level++;

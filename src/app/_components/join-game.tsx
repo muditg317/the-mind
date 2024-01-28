@@ -20,6 +20,7 @@ import { api } from "@_trpc/react";
 
 export function JoinGame() {
   const router = useRouter();
+  const [usedLocal, setUsedLocal] = useState(false);
   const [playerName, setPlayerName] = useState("");
   const availableRooms = api.games.getOpenRooms.useQuery(undefined, {
     keepPreviousData: true,
@@ -37,8 +38,11 @@ export function JoinGame() {
   });
 
   useEffect(() => {
-    if (!playerName) setPlayerName(localStorage.getItem("playerName") ?? "");
-  }, [playerName]);
+    if (!usedLocal && !playerName) {
+      setPlayerName(localStorage.getItem("playerName") ?? "");
+      setUsedLocal(true);
+    }
+  }, [usedLocal, playerName]);
 
   const openRooms = availableRooms.data;
 

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ValueOf } from "./utils";
+import { env } from "@env";
 
 export const ROOM_VACATED_DELAY_MS_TO_DELETE_ROOM = 5000 as const;
 export const GAME_COMPLETED_DELAY_MS_SEND_UPDATE = 500 as const;
@@ -64,14 +65,17 @@ export type MindGameStateUpdate =
   }
 ;
 
+function roomChannelPrefix(roomName: string) {
+  return `world-${env.NEXT_PUBLIC_PUSHER_WORLD}-room-${roomName}`;
+}
 export function gameChannelName(roomName: string) {
-  return `room-${roomName}-game`;
+  return `${roomChannelPrefix(roomName)}-game`;
 }
 export function generalChatChannelName(roomName: string) {
-  return `room-${roomName}-chat-all`;
+  return `${roomChannelPrefix(roomName)}-chat-all`;
 }
 export function finishedChatChannelName(roomName: string) {
-  return `room-${roomName}-chat-finished`;
+  return `${roomChannelPrefix(roomName)}-chat-finished`;
 }
 export function getRoomNameFromGameChannel(game_channel_name: string) {
   return /^room-(.*)-game$/.exec(game_channel_name)?.at(1);

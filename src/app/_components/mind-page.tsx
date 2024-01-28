@@ -179,10 +179,11 @@ function GameFragment({currentPlayer, playerInfo, gameState, isHost}: GameFragme
       return <Card key={card}
         value={card}
         faceUp={true}
+        disabled={true}
       />
     })}</div>
     <div
-      className="flex flex-row gap-4 m-4"
+      className="flex flex-col md:flex-row gap-4 m-4 flex-wrap max-w-full"
     >{!!players.length && players.map(([playerName, player]) => {
       return <div key={playerName} className="flex flex-col rounded-md border border-black border-thin gap-4 p-2">
         <h4 className="text-lg text-center w-full px-6">{playerName}</h4>

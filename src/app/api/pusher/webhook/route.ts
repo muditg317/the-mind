@@ -1,11 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { eq } from "drizzle-orm";
 
 import { db } from "@server/db";
-import { getUsersInRoom, webhookEvents } from "@pusher/server";
+import { getUsersInRoom, pusherServer, sendEvent, sendUserEvent, webhookEvents } from "@pusher/server";
 import { baseChannelName } from "@pusher/shared";
-import { type MindUserId, ROOM_VACATED_DELAY_MS_TO_DELETE_ROOM, getRoomNameFromGameChannel } from "@lib/mind";
+import { type MindUserId, ROOM_VACATED_DELAY_MS_TO_DELETE_ROOM, getRoomNameFromGameChannel, MindGameStateUpdate, gameChannelName, STATE_UPDATE_PUSHER_EVENT } from "@lib/mind";
 import { games } from "@server/db/schema";
-import { eq } from "drizzle-orm";
+import { getGameStateUpdate, sendGameUpdates } from "@server/helpers";
 
 export async function POST(req: NextRequest) {
   const events = await webhookEvents(req);
@@ -46,18 +47,21 @@ export async function POST(req: NextRequest) {
           const player = game.player_list[playerId]!;
 
           player.checkedIn = event.name === "member_added";
+          if (event.name === "member_removed") delete player.socketId;
 
           await db.update(games)
             .set(game)
             .where(eq(games.room_name, roomName))
             .execute();
 
-          console.log(`${player.playerName} checked ${inOutStr} for room ${roomName}`);
+          console.log(`${player.playerName} checked ${inOutStr} for room ${roomName}`);//, player);
 
-          // if (event.name === "member_removed") {
-          //   const {users: remainingActive} = await getUsersInRoom(roomName);
-          //   console.log(`Remaining users: [${remainingActive}]`);
-          // }
+          if (event.name === "member_removed") {
+            const {users: remainingActive} = await getUsersInRoom(roomName);
+            console.log(`Remaining users: [${remainingActive}]`);
+          } else {
+            await sendGameUpdates(roomName, playerId);
+          }
       } break;
       case "channel_occupied":
       case "channel_vacated": {

@@ -11,7 +11,7 @@ export const chatRouter = createTRPCRouter({
     .mutation(async ({ input: { text, mindUser: { roomName, playerName } }}) => {
       const channelNameGame = gameChannelName(roomName);
       console.log(`Got message |${text}| from |${playerName}| in room |${roomName}|`);
-      
+
       try {
         await pusherServer.trigger(channelNameGame, 'mind:message', `${playerName}: ${text}`)
       } catch (e) {

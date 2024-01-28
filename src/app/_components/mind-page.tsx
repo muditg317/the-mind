@@ -1,13 +1,15 @@
 "use client"
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 import { api } from "@_trpc/react"
-import { PusherClientProvider } from "@pusher/react";
-import type { MindPublicGameState, MindUser, MindUserPresence } from "@lib/mind";
-import { userId } from "@lib/mind";
+import { PusherClientProvider, usePusherClient } from "@pusher/react";
+import type { MindPublicGameState, MindUser, MindUserPrivateState, MindUserPresence, MindLocalGameState } from "@lib/mind";
+import { gameChannelName, userId } from "@lib/mind";
 import MindHostFragment from "./mind-host";
-import { useGamePlayerTracker } from "@lib/mindHooks";
+import { useGamePlayerTracker, useGameStateReducer } from "@lib/mindHooks";
+import { useEventSubscriptionReducer } from "@pusher/react/hooks";
 
 interface MindPageProps {
   mindUserInfo: Omit<MindUser, "playerName">;
@@ -32,6 +34,7 @@ export default function MindPage({ mindUserInfo }: MindPageProps) {
   )
 }
 
+
 function Content(mindUser: MindUser) {
   const { playerName, roomName } = mindUser;
   const user_id = userId(mindUser);
@@ -43,9 +46,53 @@ function Content(mindUser: MindUser) {
     currentPlayer,
     hostPlayer
   } = useGamePlayerTracker({ playerName, roomName, user_id });
-  const isHost = currentPlayer?.user_id === hostPlayer?.user_id;
+  const isHost = !!(
+    currentPlayer
+    && hostPlayer
+    && currentPlayer.user_id === hostPlayer.user_id
+  );
 
-  const gameState = api.room.gameState.useQuery(mindUser); // TODO: replace with socket bruh wtf
+  // const connection = usePusherClient().connection;
+  // const registerSocketId = api.room.registerSocketId.useMutation({
+  //   // retry: (failureCount) => failureCount < 10,
+  //   onSuccess: (_data, variables) => {
+  //     const sent = {...variables} as Partial<typeof variables>;
+  //     delete sent.roomName;
+  //     delete sent.playerName;
+  //     console.log("Updated socketId with server!", sent);
+  //   },
+  //   onMutate: variables => {
+  //     console.log("updating socketid", variables);
+  //   },
+  //   trpc: {
+  //     abortOnUnmount: true
+  //   }
+  // });
+  // useEffect(() => {
+  //   const callback = () => {
+  //     const socketId = connection.socket_id;
+  //     registerSocketId.mutate({
+  //       ...mindUser,
+  //       socketId,
+  //     });
+  //   };
+
+  //   connection.bind("connected", callback);
+
+  //   return () => {
+  //     if (registerSocketId.isSuccess && "socketId" in registerSocketId.variables!) {
+  //       registerSocketId.mutate({
+  //         ...mindUser,
+  //         removeId: registerSocketId.variables!.socketId,
+  //       });
+  //     }
+  //     connection.unbind("connection", callback);
+  //   }
+  // }, []);
+
+  const gameState = useGameStateReducer(mindUser);
+  // console.log("rerendering with state", gameState);
+  // console.log("rerendering with curr", currentPlayer);
 
   // TODO: if host - add kick buttons
 
@@ -57,8 +104,17 @@ function Content(mindUser: MindUser) {
           <p>{`Your name: ${playerName}`}</p>
         </h1>
 
-        {(gameState.isSuccess && gameState.data && !!currentPlayer)
-          ? <GameFragment currentPlayer={currentPlayer} gameState={gameState.data} isHost={isHost} />
+        {(!!currentPlayer && !!gameState.playerInfo && !!gameState.gameState)
+          ? <GameFragment
+              currentPlayer={{
+                roomName: gameState.roomName,
+                playerName: gameState.playerName,
+                user_id: userId(gameState)
+              }}
+              playerInfo={gameState.playerInfo}
+              gameState={gameState.gameState}
+              isHost={isHost}
+            />
           : null}
 
         <div className="w-full p-4 m-2 mt-auto rounded-xl shadow-inner-lg justify-self-end">
@@ -89,19 +145,21 @@ function Content(mindUser: MindUser) {
 
 interface GameFragmentProps {
   currentPlayer: MindUserPresence;
-  gameState: MindPublicGameState;
+  playerInfo?: NonNullable<MindLocalGameState["playerInfo"]>;
+  gameState: NonNullable<MindLocalGameState["gameState"]>;
   isHost: boolean;
 }
-function GameFragment({currentPlayer, gameState, isHost}: GameFragmentProps) {
-  // const toggleReady = api.room.toggleReady.useMutation({});
-  console.log(gameState);
-
-  const playerReady = gameState.playerState[currentPlayer.user_id]!.ready;
+function GameFragment({currentPlayer, playerInfo, gameState, isHost}: GameFragmentProps) {
+  const toggleReady = api.room.toggleReady.useMutation({});
+  console.log("render game fragment", {currentPlayer, playerInfo, gameState, isHost});
+  
+  const playerReady = playerInfo?.ready ?? false;
+  console.log("ready", playerReady);
 
   return (<>
     {isHost
       ? (<div className="w-full p-4 m-2 mb-auto rounded-xl shadow-inner-lg justify-self-start flex flex-row items-center gap-6">
-          <MindHostFragment mindUser={currentPlayer} gameState={gameState} />
+          <MindHostFragment hostPlayer={currentPlayer} gameState={gameState} />
         </div>)
       : <div className="mb-auto"></div>
     }
@@ -111,7 +169,7 @@ function GameFragment({currentPlayer, gameState, isHost}: GameFragmentProps) {
           className="px-10 py-3 font-semibold transition rounded-full bg-white/10 hover:bg-white/20"
           onClick={e => {
             e.preventDefault();
-            // toggleReady.mutate(currentPlayer);
+            toggleReady.mutate(currentPlayer);
           }}
         >
         {playerReady ? "Un-ready" : "Ready Up!"}

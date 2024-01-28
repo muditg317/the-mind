@@ -1,13 +1,14 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
+import { eq } from "drizzle-orm";
 
 import { pusherServer } from "@pusher/server"
 import { gameChannelName, mindUserZod, userId } from "@lib/mind";
 import { db } from "@server/db";
+import { games } from "@server/db/schema";
 
 
 export async function POST(req: NextRequest) {
-  // console.log(await req.text());
   const query_params = Object.fromEntries(new URLSearchParams(await req.text()).entries());
   const { channel_name, socket_id, playerName, roomName } = z
     .object({ channel_name: z.string(), socket_id: z.string() })
@@ -16,8 +17,10 @@ export async function POST(req: NextRequest) {
 
   const user_id = userId({roomName, playerName});
 
+  // console.log(`Begin auth on ${channel_name} channel for ${playerName} (socket ${socket_id}) in room ${roomName}`)
+
   if (channel_name === gameChannelName(roomName)) {
-    const game = await db.query.games.findFirst({
+    var game = await db.query.games.findFirst({
       where: ({ room_name }, { eq, and }) => and(
         eq(room_name, roomName),
       ),
@@ -28,9 +31,17 @@ export async function POST(req: NextRequest) {
     if (!game) throw new Error(
       `Cannot connect to non-existent room ${roomName}!`
     );
+
+    if (!(playerName in game.player_list)) throw new Error(
+      `Player ${playerName} not in room ${roomName}! Cannot create socket`
+    );
+
+    // const player = game.player_list[user_id]!;
+    // if (player.checkedIn) throw new Error(
+    //   `Player ${playerName} is already checked in to room ${roomName}!`
+    // );
   }
 
-  // console.log(`Begin auth on ${channel_name} channel for ${playerName} (socket ${socket_id}) in room ${roomName}`)
   const auth = pusherServer.authorizeChannel(socket_id, channel_name, {
     user_id,
     user_info: {
@@ -39,6 +50,14 @@ export async function POST(req: NextRequest) {
       roomName
     },
   });
+
+  if (game) {
+    game.player_list[user_id]!.socketId = socket_id;
+    await db.update(games)
+      .set(game)
+      .where(eq(games.room_name, roomName))
+      .execute();
+  }
   // console.log(`Authorized ${channel_name} channel for ${playerName} (socket ${socket_id}) in room ${roomName}`)
   return NextResponse.json(auth);
 }

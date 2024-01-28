@@ -1,5 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useReducer, useState } from "react";
+import type { Reducer, ReducerState, ReducerAction } from "react";
 import type { Channel, PresenceChannel } from "pusher-js";
+import type PusherClient from "pusher-js";
 
 import { type PresenceFromDataAndId, presenceChannelName } from "@pusher/shared";
 import { bindPresenceMemberAdded, bindPresenceMemberRemoved, bindPresenceSubscribed, unbindPresenceMemberAdded, unbindPresenceMemberRemoved, unbindPresenceSubscribed, usePusherClient } from "@pusher/react";
@@ -91,3 +93,34 @@ export function useMutationOnSubscribe<TData, TError, TVariables, TContext>(base
     }
   }, [channel, mutation, mutationData]);
 }
+
+type CommonProps<A,B> = {
+  [K in keyof A & keyof B]: A[K] | B[K]
+}
+
+export function useEventSubscriptionReducer<
+    C extends CommonProps<Channel, PusherClient["user"]>,
+    R extends Reducer<any, any>,
+  >(
+  channels: C[],
+  eventName: string,
+  initialState: ReducerState<R>,
+  reducer: R
+) {
+  const [state, dispatch] = useReducer(reducer, initialState);
+
+  useEffect(() => {
+    const callback = (evt: ReducerAction<R>) => dispatch(evt);
+    channels.forEach(channel => {
+      console.log("subscribed to ", channel, `event ${eventName} for game updates`);
+      channel.bind(eventName, callback);
+    });
+
+    return () => {
+      channels.forEach(channel => channel.unbind(eventName, callback));
+    }
+  }, [eventName, dispatch]);
+
+  return state;
+}
+

@@ -37,13 +37,13 @@ export function PusherClientProvider({ mindUser, children }: React.PropsWithChil
         params: { ...mindUser },
       },
       userAuthentication: {
-        endpoint: "api/pusher/auth-user",
+        endpoint: "/api/pusher/auth-user",
         transport: "ajax",
         params: { ...mindUser },
       },
     });
-    
-    // pusherClient.signin();
+
+    pusherClient.signin();
     
     typeof window !== "undefined" && console.log(pusherClient);
     return pusherClient;

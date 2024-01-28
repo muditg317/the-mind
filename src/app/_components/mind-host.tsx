@@ -4,7 +4,7 @@ import { api } from "@_trpc/react";
 import type { MindUserId, MindUserPresence } from "@lib/mind";
 
 interface MindHostFragmentProps {
-  mindUser: MindUserPresence
+  hostPlayer: MindUserPresence
   gameState: {
     started: boolean;
     level: number;
@@ -16,7 +16,7 @@ interface MindHostFragmentProps {
     }>;
   }
 }
-export default function MindHostFragment({ mindUser, gameState }: MindHostFragmentProps) {
+export default function MindHostFragment({ hostPlayer: mindUser, gameState }: MindHostFragmentProps) {
   const locked = api.room.isLocked.useQuery({roomName: mindUser.roomName});
   const toggleRoomLock = api.room.toggleRoomLock.useMutation({
     onSuccess: async () => {

@@ -4,9 +4,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { api } from "@_trpc/react"
-import type { MindUser, MindUserId, MindUserPresence } from "@lib/mind";
-import { arrayContainsMatchingPlayer, gameChannelName, userId } from "@lib/mind";
-import { useMemberTracker } from "@pusher/react/hooks";
+import type { MindPublicGameState, MindUser, MindUserPrivateState, MindUserId, MindUserPresence, MindLocalGameState, MindGameStateUpdate } from "@lib/mind";
+import { STATE_UPDATE_PUSHER_EVENT, arrayContainsMatchingPlayer, gameChannelName, userId } from "@lib/mind";
+import { useChannel, useEventSubscriptionReducer, useMemberTracker } from "@pusher/react/hooks";
+import { ValueOf } from "./utils";
+import { usePusherClient } from "@pusher/react";
 
 export function useGamePlayerTracker({roomName, playerName}: MindUserPresence) {
   const router = useRouter();
@@ -30,6 +32,7 @@ export function useGamePlayerTracker({roomName, playerName}: MindUserPresence) {
   useEffect(() => {
     if (playerInfoQuery.isError) {
       const code = playerInfoQuery.error.data?.code;
+      console.log("playerinfoquery failed with error", playerInfoQuery.error);
       if (code === "UNAUTHORIZED" || code === "BAD_REQUEST") {
         router.replace("/");
       }
@@ -50,7 +53,7 @@ export function useGamePlayerTracker({roomName, playerName}: MindUserPresence) {
   }, [inChannelPlayers, playerInfoQuery]);
 
   const currentPlayer = inChannelPlayers.find(player => player.user_id === userId({roomName, playerName}));
-  const hostPlayer = inChannelPlayers.find(player => player.user_id === userId({roomName, playerName: hostName}));
+  const hostPlayer = hostName ? inChannelPlayers.find(player => player.user_id === userId({roomName, playerName: hostName})) : undefined;
 
   const [activePlayers, imposterPlayers] = useMemo(() => {
     const filtered: MindUserPresence[] = [];
@@ -77,4 +80,48 @@ export function useGamePlayerTracker({roomName, playerName}: MindUserPresence) {
     currentPlayer,
     hostPlayer
   }
+}
+
+function gameStateReducer(prevState: MindLocalGameState, action: MindGameStateUpdate) {
+  // const newState = {...prevState};
+  console.log("got game update", action);
+  const logFirst = <T>(obj: T) => {
+    console.log(obj);
+    return obj;
+  }
+  switch (action.type) {
+    case "playerInfo":
+      // newState.playerInfo = action.playerInfo;
+      return logFirst({...prevState, playerInfo: action.playerInfo});
+    case "stateUpdate":
+      // newState.gameState = action.newState;
+      return logFirst({...prevState, gameState: action.newState});
+    case "playerUpdate":
+      if (prevState.gameState) {
+        return logFirst({
+          ...prevState,
+          gameState: {
+            ...prevState.gameState,
+            playerState: {
+              ...prevState.gameState.playerState,
+              [action.id]: action.newInfo,
+            }
+          }
+        });
+      } else {
+        return prevState;
+      }
+  }
+  return prevState;
+}
+
+export function useGameStateReducer(mindUser: MindUser) {
+  const userChannel = usePusherClient().user;
+  const gameChannel = useChannel(gameChannelName(mindUser.roomName));
+  return useEventSubscriptionReducer(
+    [userChannel, gameChannel],
+    STATE_UPDATE_PUSHER_EVENT,
+    {...mindUser},
+    gameStateReducer
+  );
 }

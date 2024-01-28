@@ -32,7 +32,10 @@ export const gamesRouter = createTRPCRouter({
   getOpenRooms: publicProcedure.query(({ ctx }) => {
     return ctx.db.query.games.findMany({
       orderBy: (games, { desc }) => [desc(games.updatedAt)],
-      where: ({ locked }, { eq, not }) => not(eq(locked, true)),
+      where: ({ locked, started }, { eq, not, and }) => and(
+        not(eq(started, true)),
+        not(eq(locked, true))
+      ),
       columns: {
         room_name: true
       }

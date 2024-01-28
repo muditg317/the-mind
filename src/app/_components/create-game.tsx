@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { api } from "@_trpc/react";
 
@@ -16,6 +16,10 @@ export function CreateGame() {
       router.push(`game/${roomName}`);
     },
   });
+
+  useEffect(() => {
+    if (!hostName) setHostName(localStorage.getItem("playerName") ?? "");
+  }, [hostName]);
 
   return (<>
     <h2 className="text-2xl mb-6">Create a new room</h2>

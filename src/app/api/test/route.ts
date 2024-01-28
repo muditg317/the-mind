@@ -1,5 +1,5 @@
 import { pusherServer } from "@pusher/server";
-import { sendGameUpdates } from "@server/helpers";
+import { sendGameUpdates } from "@server/helpers/pusher-updates";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {

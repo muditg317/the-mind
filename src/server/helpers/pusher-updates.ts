@@ -5,8 +5,12 @@ import { eq } from "drizzle-orm";
 import { getUsersInRoom, sendEvent, sendUserEvent } from "@pusher/server";
 import { MindGameStateUpdate, MindPublicGameState, MindUser, MindUserId, MindUserPrivateState, STATE_UPDATE_PUSHER_EVENT, gameChannelName, userId } from "@lib/mind";
 
-import { db } from "./db";
-import { games } from "./db/schema";
+import { TheMindDatabase, db } from "../db";
+import { games } from "../db/schema";
+import { ValueOf } from "@lib/utils";
+import { getGameStateFromDatabaseGame, getPlayerInfoFromDatabasePlayer, type GameSchema } from "./game-transform";
+
+
 
 export async function getGameStateUpdate(roomName: string, playerId: MindUserId): Promise<[MindPublicGameState, MindUserPrivateState]> {
   const game = await db.query.games.findFirst({
@@ -54,30 +58,8 @@ export async function getGameStateUpdate(roomName: string, playerId: MindUserId)
     `Player ${playerId} is not in room ${roomName}`
   );
 
-  const playerState: Record<MindUserId, {
-    ready: boolean,
-    cardsLeft: number,
-    cards?: number[],
-  }> = {};
-  for (const otherPlayerId in game.player_list) {
-    const otherPlayer = game.player_list[otherPlayerId as MindUserId]!;
-    playerState[otherPlayerId as MindUserId] = {
-      ready: otherPlayer.checkedIn && otherPlayer.ready,
-      cardsLeft: otherPlayer.cards.length,
-    };
-  }
-
-  const gameState = {
-    started: game.started!,
-    level: game.level!,
-    played_cards: game.played_cards!,
-    playerState
-  }
-  const playerPrivateState = {
-    checkedIn: player.checkedIn,
-    ready: player.ready,
-    cards: player.cards,
-  }
+  const gameState = await getGameStateFromDatabaseGame(game);
+  const playerPrivateState = await getPlayerInfoFromDatabasePlayer(player);
 
   return [gameState, playerPrivateState];
 }
@@ -85,7 +67,6 @@ export async function getGameStateUpdate(roomName: string, playerId: MindUserId)
 
 export async function sendGameUpdates(roomName: string, playerId: MindUserId) {
   const [newState, playerInfo] = await getGameStateUpdate(roomName, playerId);
-
   sendEvent<MindGameStateUpdate>(
     gameChannelName(roomName),
     STATE_UPDATE_PUSHER_EVENT,
@@ -103,4 +84,25 @@ export async function sendGameUpdates(roomName: string, playerId: MindUserId) {
       playerInfo,
     }
   );
+}
+export async function sendGameUpdatesToAll(game: Omit<GameSchema, "createdAt"|"updatedAt">) {
+  sendEvent<MindGameStateUpdate>(
+    gameChannelName(game.room_name),
+    STATE_UPDATE_PUSHER_EVENT,
+    {
+      type: "stateUpdate",
+      newState: await getGameStateFromDatabaseGame(game),
+    }
+  );
+
+  for (const playerId in game.player_list) {
+    sendUserEvent<MindGameStateUpdate>(
+      playerId,
+      STATE_UPDATE_PUSHER_EVENT,
+      {
+        type: "playerInfo",
+        playerInfo: await getPlayerInfoFromDatabasePlayer(game.player_list[playerId as MindUserId]!),
+      }
+    );
+  }
 }

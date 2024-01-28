@@ -10,11 +10,13 @@ import { gameChannelName, userId } from "@lib/mind";
 import MindHostFragment from "./mind-host";
 import { useGamePlayerTracker, useGameStateReducer } from "@lib/mindHooks";
 import { useEventSubscriptionReducer } from "@pusher/react/hooks";
+import { cn } from "@lib/utils";
 
 interface MindPageProps {
   mindUserInfo: Omit<MindUser, "playerName">;
+  initialGameState: MindPublicGameState;
 }
-export default function MindPage({ mindUserInfo }: MindPageProps) {
+export default function MindPage({ mindUserInfo, initialGameState }: MindPageProps) {
   const router = useRouter();
   const playerName = localStorage.getItem("playerName");
   if (!playerName) {
@@ -27,17 +29,36 @@ export default function MindPage({ mindUserInfo }: MindPageProps) {
     playerName
   }
 
+  const initialPlayerInfo = api.room.playerInfo.useQuery(mindUser);
+  useEffect(() => {
+    if (initialPlayerInfo.isError) {
+      const code = initialPlayerInfo.error.data?.code;
+      console.log("playerinfoquery failed with error", initialPlayerInfo.error);
+      if (code === "UNAUTHORIZED" || code === "BAD_REQUEST") {
+        router.replace("/");
+      }
+    }
+  }, [router, playerName, initialPlayerInfo.isError, initialPlayerInfo.error]);
+
   return (
     <PusherClientProvider mindUser={mindUser}>
-      <Content {...mindUser} />
+      {(initialPlayerInfo.isSuccess && !!initialPlayerInfo.data)
+        ? <Content initialState={{
+            playerName,
+            roomName: mindUserInfo.roomName,
+            playerInfo: initialPlayerInfo.data,
+            gameState: initialGameState,
+        }} />
+        : null
+      }
     </PusherClientProvider>
   )
 }
 
 
-function Content(mindUser: MindUser) {
-  const { playerName, roomName } = mindUser;
-  const user_id = userId(mindUser);
+function Content({initialState}: {initialState: MindLocalGameState}) {
+  const { playerName, roomName } = initialState;
+  const user_id = userId({ playerName, roomName });
   const {
     // allPlayers,
     activePlayers,
@@ -52,9 +73,11 @@ function Content(mindUser: MindUser) {
     && currentPlayer.user_id === hostPlayer.user_id
   );
 
-  api.room.pingForUpdate.useQuery(mindUser);
+  api.room.pingForUpdate.useQuery({ playerName, roomName });
 
-  const gameState = useGameStateReducer(mindUser);
+  console.log("initial",initialState);
+  const gameState = useGameStateReducer(initialState);
+  console.log("setup",gameState);
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#bae5ff] to-[#343aae] text-white">
@@ -64,7 +87,7 @@ function Content(mindUser: MindUser) {
           <p>{`Your name: ${playerName}`}</p>
         </h1>
 
-        {(!!currentPlayer && !!gameState.playerInfo && !!gameState.gameState)
+        {(!!gameState.playerInfo && !!gameState.gameState)
           ? <GameFragment
               currentPlayer={{
                 roomName: gameState.roomName,
@@ -82,24 +105,37 @@ function Content(mindUser: MindUser) {
           {!!activePlayers.length && <>
             <h3 className="w-full text-center">Active Players:</h3>
             <div className="flex gap-4 bg-gray-500/50">{activePlayers.map((player, i) => (
-              <p key={i}>{`${player.playerName}${player.playerName === playerName ? " (you)" : ""}`}</p>
+              <PlayerDisplay key={i} playerName={player.playerName} you={playerName} host={hostPlayer?.playerName} />
             ))}</div>
           </>}
           {!!inactivePlayers.length && <>
             <h3 className="w-full text-center">Inactive Players:</h3>
             <div className="flex gap-4 bg-gray-500/50">{inactivePlayers.map((player, i) => (
-              <p key={i}>{`${player.playerName}${player.playerName === playerName ? " (you)" : ""}`}</p>
+              <PlayerDisplay key={i} playerName={player.playerName} you={playerName} host={hostPlayer?.playerName} />
             ))}</div>
           </>}
           {!!imposterPlayers.length && <>
             <h3 className="w-full text-center">Imposters!!:</h3>
             <div className="flex gap-4 bg-gray-500/50">{imposterPlayers.map((player, i) => (
-              <p key={i}>{`${player.playerName}${player.playerName === playerName ? " (you)" : ""}`}</p>
+              <PlayerDisplay key={i} playerName={player.playerName} you={playerName} host={hostPlayer?.playerName} />
             ))}</div>
           </>}
         </div>
       </div>
     </main>
+  );
+}
+
+interface PlayerDisplayProps {
+  playerName: string;
+  you: string;
+  host?: string;
+}
+function PlayerDisplay({playerName, you, host}: PlayerDisplayProps) {
+  return (
+    <p>
+      {`${playerName}${playerName === host ? " (host)" : ""}${playerName === you ? " (you)" : ""}`}
+    </p>
   );
 }
 
@@ -111,10 +147,18 @@ interface GameFragmentProps {
 }
 function GameFragment({currentPlayer, playerInfo, gameState, isHost}: GameFragmentProps) {
   const toggleReady = api.room.toggleReady.useMutation({});
-  // console.log("render game fragment", {currentPlayer, playerInfo, gameState, isHost});
+  console.log("render game fragment", {currentPlayer, playerInfo, gameState, isHost});
   
   const playerReady = playerInfo.ready ?? false;
   // console.log("ready", playerReady);
+
+  const players = Object.entries(gameState.playerState).sort(([nameA],[nameB]) => {
+    if (nameA === currentPlayer.playerName) return -1;
+    if (nameB === currentPlayer.playerName) return 1;
+    return 0;
+  });
+
+  const playCard = api.room.playCard.useMutation({});
 
   return (<>
     {isHost
@@ -124,7 +168,41 @@ function GameFragment({currentPlayer, playerInfo, gameState, isHost}: GameFragme
       : <div className="mb-auto"></div>
     }
 
-    {!gameState.started && (
+    <p>Level {gameState.level}</p>
+    <div
+      className="flex flex-row gap-1 m-1"
+    >{!!gameState.played_cards.length && gameState.played_cards.map(card => {
+      return <Card key={card}
+        value={card}
+        faceUp={true}
+      />
+    })}</div>
+    <div
+      className="flex flex-row gap-4 m-4"
+    >{!!players.length && players.map(([playerName, player]) => {
+      return <div key={playerName} className="flex flex-col rounded-md border border-black border-thin gap-4 p-2">
+        <h4 className="text-lg text-center w-full px-6">{playerName}</h4>
+        {!!player.cardsLeft && <div className="flex flex-row gap-2 justify-center items-center">
+          {new Array(player.cardsLeft).fill(null).map((_, i) => {
+            const isCurrentPlayer = playerName === currentPlayer.playerName;
+            const cardValue = isCurrentPlayer
+              ? playerInfo.cards[i]!
+              : player.visibleCards?.[i];
+            return <Card key={i}
+              value={cardValue}
+              faceUp={cardValue !== undefined}
+              className={isCurrentPlayer ? "bg-white/10 hover:bg-white/20" : ""}
+              disabled={!isCurrentPlayer}
+              onClick={e => {
+                e.preventDefault();
+                playCard.mutate({...currentPlayer, card: playerInfo.cards[i]!})
+              }}
+            />
+          })}
+        </div>}
+      </div>
+    })}</div>
+    {!gameState.started ? (
       <button
           className="px-10 py-3 font-semibold transition rounded-full bg-white/10 hover:bg-white/20"
           onClick={e => {
@@ -134,6 +212,23 @@ function GameFragment({currentPlayer, playerInfo, gameState, isHost}: GameFragme
         >
         {playerReady ? "Un-ready" : "Ready Up!"}
       </button>
-    )}
+    ) : (<>
+    </>)}
   </>)
+}
+
+type CardProps = {
+  value?: number;
+  faceUp: boolean
+} & JSX.IntrinsicElements["button"];
+function Card({ value, faceUp, ...buttonProps }: CardProps) {
+  return <button
+    {...buttonProps}
+    className={cn(
+      "w-10 h-14 font-semibold transition rounded-sm bg-blue-600/80 text-center align-middle",
+      faceUp && "bg-white/10",
+      buttonProps.className
+    )}
+    >{value ?? ""}
+  </button>
 }

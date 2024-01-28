@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import { api } from "@_trpc/react";
 
@@ -19,13 +19,11 @@ import { api } from "@_trpc/react";
 // import { Button } from "@components/ui/button"
 
 interface JoinGameProps {
-  existingRooms: string[];
 }
-export function JoinGame({ existingRooms }: JoinGameProps) {
+export function JoinGame({  }: JoinGameProps) {
   const router = useRouter();
   const [playerName, setPlayerName] = useState("");
   const availableRooms = api.games.getOpenRooms.useQuery(undefined, {
-    initialData: existingRooms,
     keepPreviousData: true,
     staleTime: 1000,
     refetchInterval: 1000,
@@ -39,6 +37,10 @@ export function JoinGame({ existingRooms }: JoinGameProps) {
       router.push(`game/${roomName}`);
     }
   });
+
+  useEffect(() => {
+    if (!playerName) setPlayerName(localStorage.getItem("playerName") ?? "");
+  }, [playerName]);
 
   const openRooms = availableRooms.data;
 
@@ -55,8 +57,8 @@ export function JoinGame({ existingRooms }: JoinGameProps) {
         className="w-full px-4 py-2 text-black rounded-full"
       />
       {!!openRooms && openRooms.length
-      ? openRooms.map(room => <React.Fragment key={room}>
-          <button
+      ? openRooms.map(room => (
+          <button key={room}
             className="px-10 py-3 font-semibold transition rounded-full bg-white/10 hover:bg-white/20"
             disabled={attemptJoin.isLoading}
             onClick={() => {
@@ -70,7 +72,7 @@ export function JoinGame({ existingRooms }: JoinGameProps) {
           >
             {(attemptJoin.isLoading && attemptJoin.variables?.roomName === room) ? "Attempting to join..." : `Join ${room}!`}
           </button>
-        </React.Fragment>)
+        ))
       : <p>No active games... Create one below!</p>}
     </div>
   </>);

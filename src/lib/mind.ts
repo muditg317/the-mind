@@ -2,11 +2,12 @@ import {z} from "zod";
 import { ValueOf } from "./utils";
 
 export const ROOM_VACATED_DELAY_MS_TO_DELETE_ROOM = 5000 as const;
+export const GAME_COMPLETED_DELAY_MS_SEND_UPDATE = 500 as const;
 export const STATE_UPDATE_PUSHER_EVENT = "update_game_state" as const;
 
 export const mindUserZod = z.object({
-  roomName: z.string().min(1),
-  playerName: z.string().min(1),
+  roomName: z.string().regex(/[\w]+/),
+  playerName: z.string().regex(/[\w]+/),
 });
 
 const delim = ",.-.," as const;
@@ -21,10 +22,10 @@ export type MindPublicGameState = {
   started: boolean;
   level: number;
   played_cards: number[];
-  playerState: Record<`,.-.,mind-player,.-.,room-${string},.-.,name-${string},.-.,`, {
+  playerState: Record<MindUser["playerName"], {
       ready: boolean;
       cardsLeft: number;
-      // cards?: number[]; // only filled in for current player
+      visibleCards?: number[];
   }>;
 }
 
@@ -44,8 +45,8 @@ export function defaultPlayerPrivateState(): MindUserPrivateState {
 
 
 export type MindLocalGameState = MindUser & {
-  playerInfo?: MindUserPrivateState,
-  gameState?: MindPublicGameState,
+  playerInfo: MindUserPrivateState,
+  gameState: MindPublicGameState,
 };
 export type MindGameStateUpdate = 
   | {
@@ -58,7 +59,7 @@ export type MindGameStateUpdate =
   }
   | {
     type: "playerUpdate",
-    id: MindUserId,
+    playerName: MindUser["playerName"],
     newInfo: ValueOf<MindPublicGameState["playerState"]>,
   }
 ;

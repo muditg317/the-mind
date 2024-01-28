@@ -25,32 +25,34 @@ export function useGamePlayerTracker({roomName, playerName}: MindUserPresence) {
     return inactive;
   }, [inChannelPlayers, allPlayers]);
 
-  const playerInfoQuery = api.room.playerInfo.useQuery({
+  const playersQuery = api.room.players.useQuery({
     roomName,
     playerName
   });
   useEffect(() => {
-    if (playerInfoQuery.isError) {
-      const code = playerInfoQuery.error.data?.code;
-      console.log("playerinfoquery failed with error", playerInfoQuery.error);
+    if (playersQuery.isError) {
+      const code = playersQuery.error.data?.code;
+      console.log("playerinfoquery failed with error", playersQuery.error);
       if (code === "UNAUTHORIZED" || code === "BAD_REQUEST") {
         router.replace("/");
       }
     }
-    if (playerInfoQuery.isSuccess) {
+  }, [router, playerName, playersQuery.isError, playersQuery.error]);
+  useEffect(() => {
+    if (playersQuery.isSuccess) {
       // console.log("got players:", playerInfoQuery.data.playerNames);
-      setAllPlayers(playerInfoQuery.data.playerNames.map(name => ({
+      setAllPlayers(playersQuery.data.playerNames.map(name => ({
         user_id: userId({roomName, playerName: name}),
         roomName,
         playerName: name
       })));
-      setHostName(playerInfoQuery.data.hostName);
+      setHostName(playersQuery.data.hostName);
     }
-  }, [router, playerName, roomName, playerInfoQuery.isError, playerInfoQuery.error, playerInfoQuery.isSuccess, playerInfoQuery.data]);
+  }, [roomName, playersQuery.isSuccess, playersQuery.data]);
 
   useEffect(() => {
-    void playerInfoQuery.refetch();
-  }, [inChannelPlayers, playerInfoQuery]);
+    void playersQuery.refetch();
+  }, [inChannelPlayers, playersQuery]);
 
   const currentPlayer = inChannelPlayers.find(player => player.user_id === userId({roomName, playerName}));
   const hostPlayer = hostName ? inChannelPlayers.find(player => player.user_id === userId({roomName, playerName: hostName})) : undefined;
@@ -92,6 +94,7 @@ function gameStateReducer(prevState: MindLocalGameState, action: MindGameStateUp
   switch (action.type) {
     case "playerInfo":
       // newState.playerInfo = action.playerInfo;
+      console.log("called playerInfo handler");
       return logFirst({...prevState, playerInfo: action.playerInfo});
     case "stateUpdate":
       // newState.gameState = action.newState;
@@ -104,7 +107,7 @@ function gameStateReducer(prevState: MindLocalGameState, action: MindGameStateUp
             ...prevState.gameState,
             playerState: {
               ...prevState.gameState.playerState,
-              [action.id]: action.newInfo,
+              [action.playerName]: action.newInfo,
             }
           }
         });
@@ -115,13 +118,13 @@ function gameStateReducer(prevState: MindLocalGameState, action: MindGameStateUp
   return prevState;
 }
 
-export function useGameStateReducer(mindUser: MindUser) {
+export function useGameStateReducer(initialState: MindLocalGameState) {
   const userChannel = usePusherClient().user;
-  const gameChannel = useChannel(gameChannelName(mindUser.roomName));
+  const gameChannel = useChannel(gameChannelName(initialState.roomName));
   return useEventSubscriptionReducer(
     [userChannel, gameChannel],
     STATE_UPDATE_PUSHER_EVENT,
-    {...mindUser},
+    initialState,
     gameStateReducer
   );
 }

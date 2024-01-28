@@ -30,10 +30,10 @@ export const games = createTable(
     host_ip: varchar("host_ip", { length: 256 }).notNull(),
     host_name: varchar("host_name", { length: 50 }).notNull(),
     player_list: json("player_list").$type<Record<MindUserId,MindUser&MindUserPrivateState>>().notNull(),
-    locked: boolean("locked").default(false),
-    started: boolean("started").default(false),
-    level: int("level").default(1),
-    played_cards: json("played_cards").$type<number[]>().default([]),
+    locked: boolean("locked").default(false).notNull(),
+    started: boolean("started").default(false).notNull(),
+    level: int("level").default(1).notNull(),
+    played_cards: json("played_cards").$type<number[]>().default([]).notNull(),
     createdAt: timestamp("created_at")
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),

@@ -6,7 +6,7 @@ import { getUsersInRoom, pusherServer, sendEvent, sendUserEvent, webhookEvents }
 import { baseChannelName } from "@pusher/shared";
 import { type MindUserId, ROOM_VACATED_DELAY_MS_TO_DELETE_ROOM, getRoomNameFromGameChannel, MindGameStateUpdate, gameChannelName, STATE_UPDATE_PUSHER_EVENT } from "@lib/mind";
 import { games } from "@server/db/schema";
-import { getGameStateUpdate, sendGameUpdates } from "@server/helpers";
+import { getGameStateUpdate, sendGameUpdates } from "@server/helpers/pusher-updates";
 
 export async function POST(req: NextRequest) {
   const events = await webhookEvents(req);

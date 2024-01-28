@@ -4,10 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { api } from "@_trpc/react"
-import type { MindPublicGameState, MindUser, MindUserPrivateState, MindUserId, MindUserPresence, MindLocalGameState, MindGameStateUpdate } from "@lib/mind";
+import type { MindUser, MindUserId, MindUserPresence, MindLocalGameState, MindGameStateUpdate } from "@lib/mind";
 import { STATE_UPDATE_PUSHER_EVENT, arrayContainsMatchingPlayer, gameChannelName, userId } from "@lib/mind";
 import { useChannel, useEventSubscriptionReducer, useMemberTracker } from "@pusher/react/hooks";
-import { ValueOf } from "./utils";
 import { usePusherClient } from "@pusher/react";
 
 export function useGamePlayerTracker({roomName, playerName}: MindUserPresence) {
@@ -32,7 +31,7 @@ export function useGamePlayerTracker({roomName, playerName}: MindUserPresence) {
   useEffect(() => {
     if (playersQuery.isError) {
       const code = playersQuery.error.data?.code;
-      console.log("playerinfoquery failed with error", playersQuery.error);
+      console.log("playersQuery failed with error", playersQuery.error);
       if (code === "UNAUTHORIZED" || code === "BAD_REQUEST") {
         router.replace("/");
       }
@@ -94,7 +93,7 @@ function gameStateReducer(prevState: MindLocalGameState, action: MindGameStateUp
   switch (action.type) {
     case "playerInfo":
       // newState.playerInfo = action.playerInfo;
-      console.log("called playerInfo handler");
+      // console.log("called playerInfo handler");
       return logFirst({...prevState, playerInfo: action.playerInfo});
     case "stateUpdate":
       // newState.gameState = action.newState;

@@ -3,11 +3,11 @@
 import { eq } from "drizzle-orm";
 
 import { getUsersInRoom, sendEvent, sendUserEvent } from "@pusher/server";
-import { MindGameStateUpdate, MindPublicGameState, MindUser, MindUserId, MindUserPrivateState, STATE_UPDATE_PUSHER_EVENT, gameChannelName, userId } from "@lib/mind";
+import { STATE_UPDATE_PUSHER_EVENT, gameChannelName } from "@lib/mind";
+import type { MindGameStateUpdate, MindPublicGameState, MindUserId, MindUserPrivateState } from "@lib/mind";
 
-import { TheMindDatabase, db } from "../db";
+import { db } from "../db";
 import { games } from "../db/schema";
-import { ValueOf } from "@lib/utils";
 import { getGameStateFromDatabaseGame, getPlayerInfoFromDatabasePlayer, type GameSchema } from "./game-transform";
 
 
@@ -67,7 +67,7 @@ export async function getGameStateUpdate(roomName: string, playerId: MindUserId)
 
 export async function sendGameUpdates(roomName: string, playerId: MindUserId) {
   const [newState, playerInfo] = await getGameStateUpdate(roomName, playerId);
-  sendEvent<MindGameStateUpdate>(
+  await sendEvent<MindGameStateUpdate>(
     gameChannelName(roomName),
     STATE_UPDATE_PUSHER_EVENT,
     {
@@ -76,7 +76,7 @@ export async function sendGameUpdates(roomName: string, playerId: MindUserId) {
     }
   );
   // console.log("send user event to ", playerId, playerInfo);
-  sendUserEvent<MindGameStateUpdate>(
+  await sendUserEvent<MindGameStateUpdate>(
     playerId,
     STATE_UPDATE_PUSHER_EVENT,
     {
@@ -86,7 +86,7 @@ export async function sendGameUpdates(roomName: string, playerId: MindUserId) {
   );
 }
 export async function sendGameUpdatesToAll(game: Omit<GameSchema, "createdAt"|"updatedAt">) {
-  sendEvent<MindGameStateUpdate>(
+  await sendEvent<MindGameStateUpdate>(
     gameChannelName(game.room_name),
     STATE_UPDATE_PUSHER_EVENT,
     {
@@ -96,7 +96,7 @@ export async function sendGameUpdatesToAll(game: Omit<GameSchema, "createdAt"|"u
   );
 
   for (const playerId in game.player_list) {
-    sendUserEvent<MindGameStateUpdate>(
+    await sendUserEvent<MindGameStateUpdate>(
       playerId,
       STATE_UPDATE_PUSHER_EVENT,
       {

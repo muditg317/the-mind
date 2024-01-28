@@ -4,13 +4,14 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 import { api } from "@_trpc/react"
-import { PusherClientProvider, usePusherClient } from "@pusher/react";
-import type { MindPublicGameState, MindUser, MindUserPrivateState, MindUserPresence, MindLocalGameState } from "@lib/mind";
-import { gameChannelName, userId } from "@lib/mind";
+import { PusherClientProvider } from "@pusher/react";
+import type { MindPublicGameState, MindUser, MindUserPresence, MindLocalGameState } from "@lib/mind";
+import { userId } from "@lib/mind";
 import MindHostFragment from "./mind-host";
 import { useGamePlayerTracker, useGameStateReducer } from "@lib/mindHooks";
-import { useEventSubscriptionReducer } from "@pusher/react/hooks";
 import { cn } from "@lib/utils";
+
+const UNKNOWN_NAME = "###_UNKNOWN_###";
 
 interface MindPageProps {
   mindUserInfo: Omit<MindUser, "playerName">;
@@ -18,11 +19,10 @@ interface MindPageProps {
 }
 export default function MindPage({ mindUserInfo, initialGameState }: MindPageProps) {
   const router = useRouter();
-  const playerName = localStorage.getItem("playerName");
+  const playerName = localStorage.getItem("playerName") ?? UNKNOWN_NAME;
   if (!playerName) {
     alert("No playerName loaded. if something is broken, just use \`localStorage.setItem(\"playerName\", \"<name>\")\` and reload.");
     router.replace("/");
-    return;
   }
   const mindUser = {
     ...mindUserInfo,
@@ -33,12 +33,16 @@ export default function MindPage({ mindUserInfo, initialGameState }: MindPagePro
   useEffect(() => {
     if (initialPlayerInfo.isError) {
       const code = initialPlayerInfo.error.data?.code;
-      console.log("playerinfoquery failed with error", initialPlayerInfo.error);
+      // console.log("initialPlayerInfo failed with error", initialPlayerInfo.error);
       if (code === "UNAUTHORIZED" || code === "BAD_REQUEST") {
         router.replace("/");
       }
     }
   }, [router, playerName, initialPlayerInfo.isError, initialPlayerInfo.error]);
+
+  if (playerName === UNKNOWN_NAME) {
+    router.replace("/");
+  }
 
   return (
     <PusherClientProvider mindUser={mindUser}>
@@ -75,9 +79,9 @@ function Content({initialState}: {initialState: MindLocalGameState}) {
 
   api.room.pingForUpdate.useQuery({ playerName, roomName });
 
-  console.log("initial",initialState);
+  // console.log("initial",initialState);
   const gameState = useGameStateReducer(initialState);
-  console.log("setup",gameState);
+  // console.log("setup",gameState);
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#bae5ff] to-[#343aae] text-white">
@@ -147,7 +151,7 @@ interface GameFragmentProps {
 }
 function GameFragment({currentPlayer, playerInfo, gameState, isHost}: GameFragmentProps) {
   const toggleReady = api.room.toggleReady.useMutation({});
-  console.log("render game fragment", {currentPlayer, playerInfo, gameState, isHost});
+  // console.log("render game fragment", {currentPlayer, playerInfo, gameState, isHost});
   
   const playerReady = playerInfo.ready ?? false;
   // console.log("ready", playerReady);

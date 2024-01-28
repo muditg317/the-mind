@@ -2,12 +2,11 @@ import { z } from "zod";
 
 import { createTRPCRouter, publicProcedure } from "@server/api/trpc";
 import { getGameMiddleware } from "../middleware/games";
-import { type MindUserId, mindUserZod, userId, type MindPublicGameState, gameChannelName, GAME_COMPLETED_DELAY_MS_SEND_UPDATE } from "@lib/mind";
+import { type MindUserId, mindUserZod, userId, GAME_COMPLETED_DELAY_MS_SEND_UPDATE } from "@lib/mind";
 import { TRPCError } from "@trpc/server";
 import { UNKNOWN_HOST_IP } from "@lib/utils";
 import { games } from "@server/db/schema";
 import { eq } from "drizzle-orm";
-import { pusherServer } from "@pusher/server";
 import { sendGameUpdates, sendGameUpdatesToAll } from "@server/helpers/pusher-updates";
 import { getPlayerInfoFromDatabasePlayer, gameIsWon, gameIsLost } from "@server/helpers/game-transform";
 
@@ -115,7 +114,7 @@ export const roomRouter = createTRPCRouter({
       room_name: true,
       player_list: true,
     }))
-    .mutation(async ({ ctx: { db, headers, game }, input: { playerName }}) => {
+    .mutation(async ({ ctx: { db, game }, input: { playerName }}) => {
       const playerId = userId({roomName: game.room_name, playerName});
       if (!(playerId in game.player_list)) throw new TRPCError({
         code: "UNAUTHORIZED",

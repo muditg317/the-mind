@@ -2,11 +2,11 @@ import { type NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 
 import { db } from "@server/db";
-import { getUsersInRoom, pusherServer, sendEvent, sendUserEvent, webhookEvents } from "@pusher/server";
+import { getUsersInRoom, webhookEvents } from "@pusher/server";
 import { baseChannelName } from "@pusher/shared";
-import { type MindUserId, ROOM_VACATED_DELAY_MS_TO_DELETE_ROOM, getRoomNameFromGameChannel, MindGameStateUpdate, gameChannelName, STATE_UPDATE_PUSHER_EVENT } from "@lib/mind";
+import { type MindUserId, ROOM_VACATED_DELAY_MS_TO_DELETE_ROOM, getRoomNameFromGameChannel } from "@lib/mind";
 import { games } from "@server/db/schema";
-import { getGameStateUpdate, sendGameUpdates } from "@server/helpers/pusher-updates";
+import { sendGameUpdates } from "@server/helpers/pusher-updates";
 
 export async function POST(req: NextRequest) {
   const events = await webhookEvents(req);
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
 
           if (event.name === "member_removed") {
             const {users: remainingActive} = await getUsersInRoom(roomName);
-            console.log(`Remaining users: [${remainingActive}]`);
+            console.log(`Remaining users: [${remainingActive.map(u => u.id).join(",")}]`);
           } else {
             await sendGameUpdates(roomName, playerId);
           }

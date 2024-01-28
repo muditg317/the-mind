@@ -3,7 +3,6 @@ import React from "react";
 
 import { CreateGame } from "@components/create-game";
 import { JoinGame } from "@components/join-game";
-import { api } from "@_trpc/server";
 
 export default async function Home() {
   noStore();

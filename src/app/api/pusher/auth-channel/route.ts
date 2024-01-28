@@ -19,8 +19,11 @@ export async function POST(req: NextRequest) {
 
   // console.log(`Begin auth on ${channel_name} channel for ${playerName} (socket ${socket_id}) in room ${roomName}`)
 
+  let game: Awaited<ReturnType<typeof db.query.games.findFirst<{
+    columns: {player_list: true}
+  }>>> | undefined;
   if (channel_name === gameChannelName(roomName)) {
-    var game = await db.query.games.findFirst({
+    game = await db.query.games.findFirst({
       where: ({ room_name }, { eq, and }) => and(
         eq(room_name, roomName),
       ),

@@ -1,5 +1,5 @@
-import {z} from "zod";
-import { ValueOf } from "./utils";
+import { z } from "zod";
+import type { ValueOf } from "./utils";
 
 export const ROOM_VACATED_DELAY_MS_TO_DELETE_ROOM = 5000 as const;
 export const GAME_COMPLETED_DELAY_MS_SEND_UPDATE = 500 as const;

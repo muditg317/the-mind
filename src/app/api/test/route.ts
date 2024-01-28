@@ -1,8 +1,8 @@
-import { pusherServer } from "@pusher/server";
-import { sendGameUpdates } from "@server/helpers/pusher-updates";
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 
-export async function GET(req: NextRequest) {
+import { sendGameUpdates } from "@server/helpers/pusher-updates";
+
+export async function GET(_req: NextRequest) {
   const testRoom = "bruh";
   const testPlayerId = ",.-.,mind-player,.-.,room-bruh,.-.,name-bruh,.-.,";
   await sendGameUpdates(testRoom, testPlayerId);

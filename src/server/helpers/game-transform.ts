@@ -1,6 +1,6 @@
-import { MindPublicGameState, MindUserId, MindUserPrivateState } from "@lib/mind";
+import type { MindPublicGameState, MindUserId, MindUserPrivateState } from "@lib/mind";
 import type { ValueOf } from "@lib/utils";
-import { games } from "@server/db/schema";
+import type { games } from "@server/db/schema";
 
 export type GameSchema = typeof games.$inferSelect;
 export async function getGameStateFromDatabaseGame(game: Pick<GameSchema, "player_list"|"started"|"level"|"played_cards">): Promise<MindPublicGameState> {

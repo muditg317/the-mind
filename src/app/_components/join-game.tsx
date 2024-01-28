@@ -18,9 +18,7 @@ import { api } from "@_trpc/react";
 // } from "@components/ui/alert-dialog"
 // import { Button } from "@components/ui/button"
 
-interface JoinGameProps {
-}
-export function JoinGame({  }: JoinGameProps) {
+export function JoinGame() {
   const router = useRouter();
   const [playerName, setPlayerName] = useState("");
   const availableRooms = api.games.getOpenRooms.useQuery(undefined, {

@@ -7,7 +7,7 @@ import useLazyRef from "@hooks/useLazyRef";
 import { env } from "@env";
 import type { PresenceFromDataAndId } from "./shared";
 
-PusherClient.logToConsole = true;
+// PusherClient.logToConsole = true;
 // PusherClient.log = (message: string) => {
 //   if (typeof message !== "string") {
 //     console.log(message);

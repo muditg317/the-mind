@@ -65,21 +65,21 @@ export const getUsersInRoom = async (roomName: string) => {
   );
 }
 
-export function sendEvent<
+export async function sendEvent<
     EventFormat extends Record<string, unknown>
   >(
   channel_name: string,
   event_name: string,
   event: EventFormat
 ) {
-  pusherServer.trigger(channel_name, event_name, event);
+  await pusherServer.trigger(channel_name, event_name, event);
 }
-export function sendUserEvent<
+export async function sendUserEvent<
     EventFormat extends Record<string, unknown>
   >(
   user_id: string,
   event_name: string,
   event: EventFormat
 ) {
-  pusherServer.sendToUser(user_id, event_name, event);
+  await pusherServer.sendToUser(user_id, event_name, event);
 }

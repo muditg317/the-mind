@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useReducer, useState } from "react";
-import type { Reducer, ReducerState, ReducerAction } from "react";
+import type { Reducer } from "react";
 import type { Channel, PresenceChannel } from "pusher-js";
 import type PusherClient from "pusher-js";
 
@@ -100,29 +100,29 @@ type CommonProps<A,B> = {
 
 export function useEventSubscriptionReducer<
     C extends CommonProps<Channel, PusherClient["user"]>,
-    R extends Reducer<any, any>,
+    S,A,
   >(
   channels: C[],
   eventName: string,
-  initialState: ReducerState<R>,
-  reducer: R
+  initialState: S,
+  reducer: Reducer<S,A>,
 ) {
   const [state, dispatch] = useReducer(reducer, initialState);
 
   useEffect(() => {
-    const callback = (evt: ReducerAction<R>) => dispatch(evt);
+    const callback = (evt: A) => dispatch(evt);
     channels.forEach(channel => {
-      console.log("subscribed to ", channel, `event ${eventName} for game updates`);
+      // console.log("subscribed to ", channel, `event ${eventName} for game updates`);
       channel.bind(eventName, callback);
     });
 
     return () => {
       channels.forEach(channel => {
-        console.log("unsubscribed from ", channel, `event ${eventName} for game updates`);
+        // console.log("unsubscribed from ", channel, `event ${eventName} for game updates`);
         channel.unbind(eventName, callback)
       });
     }
-  }, [eventName, dispatch, ...channels]);
+  }, [eventName, dispatch, channels]);
 
   return state;
 }

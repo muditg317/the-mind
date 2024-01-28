@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 
-import { api } from "@_trpc/server";
+// import { api } from "@_trpc/server";
 
 export default async function Page() {
-  await api.games.clear.mutate();
+//   await api.games.clear.mutate();
   redirect("/");
 }
 

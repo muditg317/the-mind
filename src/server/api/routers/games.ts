@@ -86,7 +86,7 @@ export const gamesRouter = createTRPCRouter({
       return player_list;
     }),
 
-  clear: publicProcedure.mutation(async ({ ctx: { db: _db }}) => {
-    // await db.delete(games).execute();
-  }),
+  // clear: publicProcedure.mutation(async ({ ctx: { db: _db }}) => {
+  //   // await db.delete(games).execute();
+  // }),
 });

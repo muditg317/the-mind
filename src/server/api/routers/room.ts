@@ -183,7 +183,7 @@ export const roomRouter = createTRPCRouter({
           const card = deck.splice(Math.floor(Math.random()*deck.length), 1)[0]!;
           player.cards.push(card);
         }
-        player.cards.sort();
+        player.cards = player.cards.sort((a,b) => Number(a)-Number(b));
       }
 
       await db.update(games)

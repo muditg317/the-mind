@@ -46,7 +46,7 @@ export async function gameIsLost(game: Pick<GameSchema, "player_list"|"played_ca
   const lastPlayed = game.played_cards.at(-1);
   return !!lastPlayed
       && (Object.values(game.player_list)
-          .some(player => !!player.cards.length && player.cards.at(0)! < lastPlayed)
+          .some(player => !!player.cards.find(card => card < lastPlayed))
         || game.played_cards
           .some((card, i, cards) => card < (cards[i-1] ?? 0))
       );

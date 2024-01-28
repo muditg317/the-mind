@@ -59,10 +59,10 @@ export const pusherServerFetch = async <Out, Def extends z.ZodTypeDef, In>(path:
 }
 
 export const getUsersInRoom = async (roomName: string) => {
-  return await pusherServerFetch(
+  return (await pusherServerFetch(
     `/channels/${presenceChannelName(gameChannelName(roomName))}/users`,
     z.object({ users: z.array(z.object({ id: z.string() }))})
-  );
+  )).users.map(user => user.id);
 }
 
 export async function sendEvent<

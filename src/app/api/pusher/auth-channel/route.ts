@@ -6,6 +6,7 @@ import { pusherServer } from "@pusher/server"
 import { gameChannelName, mindUserZod, userId } from "@lib/mind";
 import { db } from "@server/db";
 import { games } from "@server/db/schema";
+import { sendGameUpdates } from "@server/helpers/pusher-updates";
 
 
 export async function POST(req: NextRequest) {
@@ -60,6 +61,8 @@ export async function POST(req: NextRequest) {
       .set(game)
       .where(eq(games.room_name, roomName))
       .execute();
+
+    await sendGameUpdates(roomName, user_id);
   }
   // console.log(`Authorized ${channel_name} channel for ${playerName} (socket ${socket_id}) in room ${roomName}`)
   return NextResponse.json(auth);

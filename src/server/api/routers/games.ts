@@ -7,16 +7,27 @@ import { games } from "@server/db/schema";
 import { getGameMiddleware } from "../middleware/games";
 import { defaultPlayerPrivateState, userId } from "@lib/mind";
 import { UNKNOWN_HOST_IP } from "@lib/utils";
+import { getUsersInRoom } from "@pusher/server";
+import { handleRoomEmpty } from "@server/helpers/pusher-updates";
 
 
 export const gamesRouter = createTRPCRouter({
   create: publicProcedure
     .input(z.object({ roomName: z.string().min(3), hostName: z.string().min(3) }))
-    .mutation(async ({ ctx, input: {roomName, hostName} }) => {
-      const remoteAddr = ctx.headers.get('x-forwarded-for') ?? UNKNOWN_HOST_IP;
+    .mutation(async ({ ctx: { db, headers }, input: {roomName, hostName} }) => {
+      const remoteAddr = headers.get('x-forwarded-for') ?? UNKNOWN_HOST_IP;
       const playerId = userId({ roomName, playerName: hostName });
 
-      await ctx.db.insert(games).values({
+      const existingRoom = await db.query.games.findFirst({
+        where: ({ room_name }, { eq }) => eq(room_name, roomName),
+        columns: {}
+      }).execute();
+      if (existingRoom) {
+        const activeUserIds = await getUsersInRoom(roomName);
+        if (!activeUserIds.length) await handleRoomEmpty(roomName);
+      }
+
+      await db.insert(games).values({
         room_name: roomName,
         host_ip: remoteAddr,
         host_name: hostName,

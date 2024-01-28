@@ -3,7 +3,7 @@
 import { eq } from "drizzle-orm";
 
 import { getUsersInRoom, sendEvent, sendUserEvent } from "@pusher/server";
-import { STATE_UPDATE_PUSHER_EVENT, gameChannelName } from "@lib/mind";
+import { ROOM_VACATED_DELAY_MS_TO_DELETE_ROOM, STATE_UPDATE_PUSHER_EVENT, gameChannelName } from "@lib/mind";
 import type { MindGameStateUpdate, MindPublicGameState, MindUserId, MindUserPrivateState } from "@lib/mind";
 
 import { db } from "../db";
@@ -32,11 +32,12 @@ export async function getGameStateUpdate(roomName: string, playerId: MindUserId)
   );
 
   // TODO: this should happen elsewhere but whatever
-  const {users: activeUsers} = await getUsersInRoom(roomName);
+  const activeUserIds = await getUsersInRoom(roomName);
   let anyUpdates = false;
+  let anyActive = false;
   for (const otherPlayerId in game.player_list) {
     const otherPlayer = game.player_list[otherPlayerId as MindUserId]!;
-    const userActive = !!activeUsers.find(active => active.id === otherPlayerId);
+    const userActive = activeUserIds.includes(otherPlayerId);
     if (!userActive) {
       otherPlayer.checkedIn = false;
       otherPlayer.ready = false;
@@ -44,6 +45,7 @@ export async function getGameStateUpdate(roomName: string, playerId: MindUserId)
     } else if (!otherPlayer.checkedIn) {
       otherPlayer.checkedIn = true;
       anyUpdates = true;
+      anyActive = true;
     }
   }
   if (anyUpdates) {
@@ -51,6 +53,9 @@ export async function getGameStateUpdate(roomName: string, playerId: MindUserId)
       .set(game)
       .where(eq(games.room_name, game.room_name))
       .execute();
+  }
+  if (!anyActive) {
+    void handleRoomEmpty(roomName);
   }
 
   const player = game.player_list[playerId];
@@ -67,6 +72,7 @@ export async function getGameStateUpdate(roomName: string, playerId: MindUserId)
 
 export async function sendGameUpdates(roomName: string, playerId: MindUserId) {
   const [newState, playerInfo] = await getGameStateUpdate(roomName, playerId);
+
   await sendEvent<MindGameStateUpdate>(
     gameChannelName(roomName),
     STATE_UPDATE_PUSHER_EVENT,
@@ -104,5 +110,23 @@ export async function sendGameUpdatesToAll(game: Omit<GameSchema, "createdAt"|"u
         playerInfo: await getPlayerInfoFromDatabasePlayer(game.player_list[playerId as MindUserId]!),
       }
     );
+  }
+}
+
+export async function handleRoomEmpty(roomName: string) {
+  const timeStr = `${(ROOM_VACATED_DELAY_MS_TO_DELETE_ROOM/1000).toFixed(2)}s`;
+  console.log(
+    `Room ${roomName} has been vacated! Waiting ${timeStr} before deleting game.`
+  );
+  await new Promise(resolve => setTimeout(resolve, ROOM_VACATED_DELAY_MS_TO_DELETE_ROOM));
+  const activeUserIds = await getUsersInRoom(roomName);
+  if (!!activeUserIds.length) {
+    console.log(`Found new users [${activeUserIds.join('|||')}] in ${roomName} room! Cancelling deleting.`);
+  } else {
+    console.log(`No new users after ${timeStr}... Deleting ${roomName} room.`)
+    await db.delete(games)
+      .where(eq(games.room_name, roomName))
+      .execute();
+    console.log(`Room ${roomName} deleted.`)
   }
 }

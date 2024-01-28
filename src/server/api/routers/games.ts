@@ -20,7 +20,9 @@ export const gamesRouter = createTRPCRouter({
 
       const existingRoom = await db.query.games.findFirst({
         where: ({ room_name }, { eq }) => eq(room_name, roomName),
-        columns: {}
+        columns: {
+          id: true,
+        }
       }).execute();
       if (existingRoom) {
         const activeUserIds = await getUsersInRoom(roomName);

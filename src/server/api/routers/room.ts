@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { createTRPCRouter, publicProcedure } from "@server/api/trpc";
 import { getGameMiddleware } from "../middleware/games";
-import { type MindUserId, mindUserZod, userId } from "@lib/mind";
+import { type MindUserId, mindUserZod, userId, mindRoomNameZod } from "@lib/mind";
 import { TRPCError } from "@trpc/server";
 import { UNKNOWN_HOST_IP } from "@lib/utils";
 import { games } from "@server/db/schema";
@@ -12,7 +12,7 @@ import { getPlayerInfoFromDatabasePlayer, gameIsWon, gameIsLost } from "@server/
 
 export const roomRouter = createTRPCRouter({
   players: publicProcedure
-    .input(z.object({  }).merge(mindUserZod))
+    .input(mindUserZod)
     .use(getGameMiddleware({
       id: true,
       host_name: true,
@@ -56,7 +56,7 @@ export const roomRouter = createTRPCRouter({
     }),
 
   isLocked: publicProcedure
-    .input(z.object({ roomName: z.string() }))
+    .input(z.object({ roomName: mindRoomNameZod }))
     .use(getGameMiddleware({
       locked: true,
     }))
@@ -65,7 +65,7 @@ export const roomRouter = createTRPCRouter({
     }),
   
   toggleRoomLock: publicProcedure
-    .input(z.object({ roomName: z.string(), playerName: z.string() }))
+    .input(mindUserZod)
     .use(getGameMiddleware({
       id: true,
       host_ip: true,
@@ -197,7 +197,7 @@ export const roomRouter = createTRPCRouter({
     }),
 
   playCard: publicProcedure
-    .input(z.object({ card: z.number().int().min(1).max(100) }).merge(mindUserZod))
+    .input(mindUserZod.merge(z.object({ card: z.number().int().min(1).max(100) })))
     .use(getGameMiddleware({
       id: true,
       host_ip: true,

@@ -6,9 +6,12 @@ export const ROOM_VACATED_DELAY_MS_TO_DELETE_ROOM = 5000 as const;
 export const GAME_COMPLETED_DELAY_MS_SEND_UPDATE = 500 as const;
 export const STATE_UPDATE_PUSHER_EVENT = "update_game_state" as const;
 
+export const mindRoomNameZod = z.string().regex(/[\w]+/);
+export const mindPlayerNameZod = z.string().regex(/[\w]+/);
+
 export const mindUserZod = z.object({
-  roomName: z.string().regex(/[\w]+/),
-  playerName: z.string().regex(/[\w]+/),
+  roomName: mindRoomNameZod,
+  playerName: mindPlayerNameZod,
 });
 
 const delim = ",.-.," as const;

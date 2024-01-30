@@ -5,15 +5,15 @@ import { TRPCError } from "@trpc/server"
 import { createTRPCRouter, publicProcedure } from "@server/api/trpc";
 import { games } from "@server/db/schema";
 import { getGameMiddleware } from "../middleware/games";
-import { defaultPlayerPrivateState, userId } from "@lib/mind";
+import { defaultPlayerPrivateState, mindPlayerNameZod, mindRoomNameZod, mindUserZod, userId } from "@lib/mind";
 import { UNKNOWN_HOST_IP } from "@lib/utils";
 import { getUsersInRoom } from "@pusher/server";
-import { handleRoomEmpty } from "@server/helpers/pusher-updates";
+import { handleRoomEmpty, sendGameUpdatesToAll } from "@server/helpers/pusher-updates";
 
 
 export const gamesRouter = createTRPCRouter({
   create: publicProcedure
-    .input(z.object({ roomName: z.string().min(3), hostName: z.string().min(3) }))
+    .input(z.object({ roomName: mindRoomNameZod, hostName: mindPlayerNameZod }))
     .mutation(async ({ ctx: { db, headers }, input: {roomName, hostName} }) => {
       const remoteAddr = headers.get('x-forwarded-for') ?? UNKNOWN_HOST_IP;
       const playerId = userId({ roomName, playerName: hostName });
@@ -56,7 +56,7 @@ export const gamesRouter = createTRPCRouter({
   }),
 
   attemptJoin: publicProcedure
-    .input(z.object({ roomName: z.string().min(3), playerName: z.string().min(3) }))
+    .input(mindUserZod)
     .use(getGameMiddleware({
       id: true,
       room_name: true,
@@ -83,7 +83,12 @@ export const gamesRouter = createTRPCRouter({
         .where(eq(games.room_name, game.room_name))
         .execute();
 
-      console.log(`${playerName} joined ${game.room_name} room`)
+      console.log(`${playerName} joined ${game.room_name} room`);
+
+      const activeUserIds = await getUsersInRoom(game.room_name);
+      if (!activeUserIds.length) await handleRoomEmpty(game.room_name);
+      await sendGameUpdatesToAll(game.room_name);
+
       return {
         roomName: game.room_name,
         playerName: playerName
@@ -91,7 +96,7 @@ export const gamesRouter = createTRPCRouter({
     }),
 
   players: publicProcedure
-    .input(z.object({ roomName: z.string() }))
+    .input(z.object({ roomName: mindRoomNameZod }))
     .use(getGameMiddleware({
       player_list: true
     }))

@@ -91,7 +91,27 @@ export async function sendGameUpdates(roomName: string, playerId: MindUserId) {
     }
   );
 }
-export async function sendGameUpdatesToAll(game: Omit<GameSchema, "createdAt"|"updatedAt">) {
+export async function sendGameUpdatesToAll(game: Omit<GameSchema, "createdAt"|"updatedAt"> | string) {
+  if (typeof game === "string") {
+    const loadedGame = await db.query.games.findFirst({
+      where: ({ room_name }, { eq }) => eq(room_name, game as string),
+      columns: {
+        id: true,
+        host_ip: true,
+        host_name: true,
+        room_name: true,
+        player_list: true,
+        locked: true,
+        started: true,
+        level: true,
+        played_cards: true,
+      }
+    }).execute();
+    if (!loadedGame) throw new Error(
+      `There is no active room: ${loadedGame}`
+    );
+    game = loadedGame;
+  }
   await sendEvent<MindGameStateUpdate>(
     gameChannelName(game.room_name),
     STATE_UPDATE_PUSHER_EVENT,

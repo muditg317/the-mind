@@ -164,9 +164,11 @@ function GameFragment({currentPlayer, playerInfo, gameState, isHost}: GameFragme
 
   const playCard = api.room.playCard.useMutation({});
 
+  const renderLevel = players.every(player => !player[1].cardsLeft) ? gameState.level - 1 : gameState.level;
+
   return (<>
     {isHost
-      ? (<div className="w-full p-4 m-2 mb-auto rounded-xl shadow-inner-lg justify-self-start flex flex-row items-center gap-6">
+      ? (<div className="w-full p-4 m-2 mb-auto rounded-xl shadow-inner-lg justify-self-start flex flex-row flex-wrap items-center gap-6">
           <MindHostFragment hostPlayer={currentPlayer} gameState={gameState} />
         </div>)
       : <div className="mb-auto"></div>
@@ -174,9 +176,12 @@ function GameFragment({currentPlayer, playerInfo, gameState, isHost}: GameFragme
 
     <p>Level {gameState.level}</p>
     <div
-      className="flex flex-row gap-1 m-1"
-    >{!!gameState.played_cards.length && gameState.played_cards.map(card => {
-      return <Card key={card}
+      className="flex flex-row gap-1 m-1 max-w-screen flex-wrap"
+    >{new Array(renderLevel*players.length).fill(null).map((_, slotIndex) => {
+      const empty = slotIndex >= gameState.played_cards.length;
+      const card = empty ? undefined : gameState.played_cards[slotIndex];
+      return <Card key={card ?? slotIndex}
+        empty={empty}
         value={card}
         faceUp={true}
         disabled={true}
@@ -187,21 +192,28 @@ function GameFragment({currentPlayer, playerInfo, gameState, isHost}: GameFragme
     >{!!players.length && players.map(([playerName, player]) => {
       return <div key={playerName} className="flex flex-col rounded-md border border-black border-thin gap-4 p-2">
         <h4 className="text-lg text-center w-full px-6">{playerName}</h4>
-        {!!player.cardsLeft && <div className="flex flex-row gap-2 justify-center items-center">
-          {new Array(player.cardsLeft).fill(null).map((_, i) => {
+        {<div className="flex flex-row gap-2 justify-center items-center">
+          {new Array(renderLevel).fill(null).map((_, slotIndex) => {
+            const empty = slotIndex < (renderLevel - player.cardsLeft);
             const isCurrentPlayer = playerName === currentPlayer.playerName;
-            const cardValue = isCurrentPlayer
-              ? playerInfo.cards[i]!
-              : player.visibleCards?.[i];
-            return <Card key={i}
+            const i = empty ? -1 : (slotIndex - (renderLevel - player.cardsLeft));
+            const cardValue = empty
+              ? undefined
+              : (isCurrentPlayer
+                ? playerInfo.cards[i]!
+                : player.visibleCards?.[i]
+              );
+
+            return <Card key={slotIndex}
+              empty={empty}
               value={cardValue}
               faceUp={cardValue !== undefined}
               className={isCurrentPlayer ? "bg-white/10 hover:bg-white/20" : ""}
-              disabled={!isCurrentPlayer}
-              onClick={e => {
+              disabled={!isCurrentPlayer && !gameState.started}
+              onClick={!(isCurrentPlayer && gameState.started) ? undefined : (e => {
                 e.preventDefault();
                 playCard.mutate({...currentPlayer, card: playerInfo.cards[i]!})
-              }}
+              })}
             />
           })}
         </div>}
@@ -223,16 +235,18 @@ function GameFragment({currentPlayer, playerInfo, gameState, isHost}: GameFragme
 }
 
 type CardProps = {
+  empty: boolean;
   value?: number;
   faceUp: boolean
 } & JSX.IntrinsicElements["button"];
-function Card({ value, faceUp, ...buttonProps }: CardProps) {
+function Card({ empty, value, faceUp, ...buttonProps }: CardProps) {
   return <button
     {...buttonProps}
     className={cn(
       "w-10 h-14 font-semibold transition rounded-sm bg-blue-600/80 text-center align-middle",
       faceUp && "bg-white/10",
-      buttonProps.className
+      buttonProps.className,
+      empty && "bg-gray-500/50 shadow-inner",
     )}
     >{value ?? ""}
   </button>

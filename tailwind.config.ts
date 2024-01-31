@@ -15,6 +15,7 @@ const config = {
       sans: ["var(--font-sans)", ...fontFamily.sans],
     },
     boxShadow: {
+      "inner": "inset 0 0 8px 0 rgb(0, 0, 0, 0.5)",
       "inner-lg": "inset 0 4px 8px 0 rgb(0, 0, 0, 0.5)"
     },
     container: {

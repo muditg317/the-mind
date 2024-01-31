@@ -42,10 +42,12 @@ export async function getGameStateUpdate(roomName: string, playerId: MindUserId)
       otherPlayer.checkedIn = false;
       otherPlayer.ready = false;
       anyUpdates = true;
-    } else if (!otherPlayer.checkedIn) {
-      otherPlayer.checkedIn = true;
-      anyUpdates = true;
+    } else {
       anyActive = true;
+      if (!otherPlayer.checkedIn) {
+        otherPlayer.checkedIn = true;
+        anyUpdates = true;
+      }
     }
   }
   if (anyUpdates) {
